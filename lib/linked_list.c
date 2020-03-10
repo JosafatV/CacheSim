@@ -1,20 +1,28 @@
 //
 // Created by lionheart on 8/10/19.
-// Adapted for integers by JosafatV on 22/02/20
+// Updated to use "memory" struct by JosafatV on 9/3/20
 //
+
 #include "../include/linked_list.h"
 
-void print_list(Node_t *head) {
+void print_list(Node_t *head, int property) {
   Node_t * current = head;
   printf("[");
   while(current != NULL){
-    printf("%d ", current->value);
+    if(property == 0)
+      printf("%d ", current->value->owner);
+    else if(property == 1)
+      printf("%d ", current->value->status);
+    else if(property == 2)
+      printf("%f ", current->value->address);
+    else if(property == 3)
+      printf("%f ", current->value->data);
     current = current->next;
   }
   printf("]\n");
 }
 
-void push_back(Node_t **head, int value) {
+void push_back(Node_t **head, memory_t* value) {
   //if list is empty
   Node_t * current = *head;
   if (current == NULL){
@@ -27,12 +35,12 @@ void push_back(Node_t **head, int value) {
   }
   //add new element
   current->next = malloc(sizeof(Node_t));
-  current->next->value = value;
+  current->next->value =  value;
   current->next->next = NULL;
 }
 
-void push_front(Node_t **head, int value) {
-  Node_t * new_node;
+void push_front(Node_t **head, memory_t *value) {
+  Node_t *new_node;
   //allocates memory for new node
   new_node = malloc(sizeof(Node_t));
   new_node->value =  value;
@@ -41,9 +49,9 @@ void push_front(Node_t **head, int value) {
   *head = new_node;
 }
 
-int pop_front(Node_t **head) {
-  int retval = -1; // change to NaN or other error condition
-  Node_t* new_head = NULL;
+memory_t * pop_front(Node_t **head) {
+  memory_t *retval = NULL;
+  Node_t *new_head = NULL;
 
   //if list is empty
   if(*head == NULL){
@@ -58,8 +66,8 @@ int pop_front(Node_t **head) {
   return retval;
 }
 
-int pop_back(Node_t* head) {
-  int retval = -1; // change to NaN or other error condition
+memory_t* pop_back(Node_t *head) {
+  memory_t * retval = NULL;
 
   if(get_length(head) == 0){
     printf("List is already empty. Cannot pop-back.\n");
@@ -85,15 +93,13 @@ int pop_back(Node_t* head) {
   return retval;
 }
 
-int remove_at(Node_t **head, int index) {
+memory_t *remove_at(Node_t **head, int index) {
   if(get_length(*head) <= index || index < 0){
     printf("Cannot remove, index out of range\n");
-    return -1; // change to NaN or other error condition
+    return NULL;
   }
-
   int i = 0;
-  int retval = -1; // change to NaN or other error condition
-
+  memory_t * retval = NULL;
   Node_t * current = *head;
   Node_t * temp = NULL;
 
@@ -106,7 +112,7 @@ int remove_at(Node_t **head, int index) {
     //the index is out of range
     if(current->next == NULL){
       printf("Index out of range");
-      return -1; // change to NaN or other error condition
+      return NULL;
     }
     current = current->next;
   }
@@ -129,8 +135,8 @@ int get_length(Node_t *head) {
   return retval;
 }
 
-int get_at(Node_t *head, int index) {
-  int retval = -1; // change to NaN or other error condition
+memory_t* get_at(Node_t *head, int index) {
+  memory_t * retval = NULL;
 
   if(get_length(head) <= index || index < 0){
     printf("Index out of range. Cannot get at %d.\n", index);
@@ -147,15 +153,15 @@ int get_at(Node_t *head, int index) {
   return retval;
 }
 
-int set_at(Node_t *head,  int index, int value) {
-  int retval = -1; // change to NaN or other error condition
+memory_t *set_at(Node_t *head,  int index, memory_t *value) {
+  memory_t * retval = NULL;
 
   if(get_length(head) <= index || index < 0){
     printf("Index out of range. Cannot set at %d.\n", index);
     return retval;
   }
 
-  Node_t* current = head;
+  Node_t * current = head;
 
   for(int i = 0; i < index; ++i){
     current = current->next;
@@ -173,7 +179,7 @@ void swap(Node_t *head, int index1, int index2) {
     return;
   }
 
-  int temp;
+  memory_t* temp;
   temp = get_at(head, index1);
   set_at(head, index1, get_at(head,index2));
   set_at(head,index2, temp);

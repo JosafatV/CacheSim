@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
-#include "../include/lind_list.h"
+#include "../include/linked_list.h"
 
 
 #define op_process 0
@@ -15,18 +15,11 @@
 volatile int bus_mem = 0;
 
 typedef struct {
-    int address;
     int owner;
+    int address;
     int status;
     int data;
 } memory_t;
-
-typedef struct {
-    int num;
-    int status;
-    int address;
-    int data;
-} cache_t;
 
 typedef struct {
     int core;
@@ -93,17 +86,15 @@ int main () {
 
     processor ((void*) proc1);
 
-    //pthread_t cpu1;
-    /*pthread_t cpu2;
+    /*
+    pthread_t cpu1;
+    pthread_t cpu2;
     pthread_t cpu3;
     pthread_t cpu4;
     pthread_t l1;
     pthread_t l2;
-    */
-   //pthread_t mem;
-
-    
-
+    pthread_t mem;
+    */   
     return 0;
 }
 
