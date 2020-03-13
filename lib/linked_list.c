@@ -1,22 +1,60 @@
 //
 // Created by lionheart on 8/10/19.
-// Updated to use "memory" struct by JosafatV on 9/3/20
+// Updated to use "memory_t" struct by JosafatV on 9/3/20
 //
 
 #include "../include/linked_list.h"
 
-void print_list(Node_t *head, int property) {
+void print_mem(Node_t *head, int property) {
+  Node_t *current = head;
+  printf("[");
+  while(current != NULL){
+    if(property == 1)
+      printf("%d ", current->value->status);
+    else if(property == 2)
+      printf("%d ", current->value->core);
+    else if(property == 4)
+      printf("%d ", current->value->dir_data);
+    else if(property == 5)
+      printf("%d ", current->value->data);
+    current = current->next;
+  }
+  printf("]\n");
+}
+
+void print_l2(Node_t *head, int property) {
   Node_t * current = head;
   printf("[");
   while(current != NULL){
     if(property == 0)
-      printf("%d ", current->value->owner);
+      printf("%d ", current->value->block);
     else if(property == 1)
       printf("%d ", current->value->status);
     else if(property == 2)
-      printf("%f ", current->value->address);
+      printf("%d ", current->value->core);
     else if(property == 3)
-      printf("%f ", current->value->data);
+      printf("%d ", current->value->shared);
+    else if(property == 4)
+      printf("%d ", current->value->dir_data);
+    else if(property == 5)
+      printf("%d ", current->value->data);
+    current = current->next;
+  }
+  printf("]\n");
+}
+
+void print_l1(Node_t *head, int property) {
+  Node_t * current = head;
+  printf("[");
+  while(current != NULL){
+    if(property == 0)
+      printf("%d ", current->value->block);
+    else if(property == 1)
+      printf("%d ", current->value->status);
+    else if(property == 4)
+      printf("%d ", current->value->dir_data);
+    else if(property == 5)
+      printf("%d ", current->value->data);
     current = current->next;
   }
   printf("]\n");
