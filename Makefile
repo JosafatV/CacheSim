@@ -10,5 +10,6 @@ run:
 reset:
 		rm -r bin
 		rm lib/*.o
+		rm src/*.o
 		rm lib/*.a
 		clear

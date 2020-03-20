@@ -12,19 +12,21 @@
 
 // Unified memory struct needed for linked_list compatibility
 typedef struct {	//  L1	L2	Mem  pN
-  	int block;		//  X   X    	 0 
-	int status;		//  X   X   X	 1
-	int core;		//      X   X	 2
-	int shared;		//	    X    	 3
-	int dir_data;	//  X   X   X	 4
-	int data;		//  X   X   X	 5
+  	int block;		//  X   X    	 0 		???
+	int status;		//  X   X   X	 1		in which state is the data (enum status)
+	int core;		//      X   X	 2		Which CPU "owns" the data
+	int shared;		//	    X    	 3		??? flag, may be redundant with status
+	int dir_data;	//  X   X   X	 4		address of the data in MEM
+	int data;		//  X   X   X	 5		the user's data
 } memory_t;
 
+// node structure for the linked_list
 typedef struct Node{
 	memory_t* value;
 	struct Node* next;
 } Node_t;
 
+// Type of status the data can have, based on the MSI protocol
 enum status {Valid = 3, Modified = 2, Shared = 1, Invalid = 0};
 
 //prints the ids of the package
