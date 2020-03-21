@@ -41,7 +41,21 @@ Node_t *L1c = NULL;
 Node_t *L1d = NULL;
 Node_t *L2a = NULL;
 Node_t *L2b = NULL;
-Node_t *MEM = NULL; 
+Node_t *MEM = NULL;
+
+    
+pthread_t cpu1;
+pthread_t cpu2;
+/*
+pthread_t cpu3;
+pthread_t cpu4;
+pthread_t l1;
+pthread_t l2;
+pthread_t mem;
+*/ 
+pthread_mutex_t l2a_lock;
+pthread_mutex_t l2b_lock;
+pthread_mutex_t mem_lock;
 
 /**  finds a data object in memory, simulates memory access penalty
  * \param level the level of memory is being accessed: 0==L1, 1==L2 & 3==MEM
@@ -118,7 +132,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
     }
 }
 
-/** After a MISS, updates the data on upper levels of memory to contain the searched-for data
+/** After a MISS, updates the data on upper levels of memory to contain the searched-for data. Access penalties are in check_mem
  * \param level in which level the data was found
  * \param cpu which cpu core is looking for the data
  * \param chip which chip is requesting data from memory
@@ -159,9 +173,13 @@ void mmu_read (int level, int cpu, int chip, int addr) {
 	    data_mem = get_at(MEM, addr);
 
         if (chip == 0) {
+            pthread_mutex_lock(&l2a_lock);
 			set_at(L2a, addr%4, data_mem);
+            pthread_mutex_unlock(&l2a_lock);
         } else {
+            pthread_mutex_lock(&l2b_lock);
             set_at(L2b, addr%4, data_mem);
+            pthread_mutex_unlock(&l2b_lock);
         }
 
         switch (cpu) {
@@ -199,7 +217,7 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	new_data->core = cpu;
 	new_data->shared = 0;		// Update
 	new_data->dir_data = addr;
-	new_data->data = data;
+	new_data->data = data;    
 
 	usleep(l1_penalty);
 	switch (cpu) {
@@ -221,31 +239,32 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	}
 
 	// Send to BUS
-
+    pthread_mutex_lock(&l2a_lock);
 	usleep(l2_penalty);
 	if (chip == 0){
 		set_at(L2a, addr%4, new_data);
 	} else {
 		set_at(L2b, addr%4, new_data);
 	}
-
+    pthread_mutex_unlock(&l2a_lock);
 	// Send to BUS
 
+    pthread_mutex_lock(&mem_lock);
 	usleep(mem_penalty);
 	set_at(MEM, addr, new_data);
+    pthread_mutex_unlock(&mem_lock);
 }
 
-void processor (void* params) {
+void* processor (void* params) {
     processor_params *p = (processor_params*) params;
     int n_core = p->id;
     int n_chip = p->chip;
 
    instr_t* current;
    current = malloc(sizeof(instr_t));
-
-    int cycles = 20;
+    int total_cycles = 20;
+    int cycles = total_cycles;
     while (cycles){
-
         // create instruction
         current->core = n_core;
         current->chip = n_chip;
@@ -253,32 +272,29 @@ void processor (void* params) {
         current->dir = (rand() % 16);
         current->data = (rand() % 1024);
 
-		// print_instr()
-        printf ("cycle %d: ", 20-cycles);
-
-        cycles--;
         if (current->op == op_write) {
             //update_cache (current->dir);
-            printf( "writting to memory\n");
 			mmu_write (current->core, current->chip, current->dir, current->data);
+            printf( "core %d, cycle %d: writting to memory\n", current->core, total_cycles-cycles);
 			printf(" └─> data written to %d\n", current->dir);
         }
         else if (current->op == op_read) {
             // verify_cache (current->dir);
-            printf( "reading %d from memory\n", current->dir);
             int location = check_mem(0, current->core, current->chip, current->dir);
+            printf("core %d, cycle %d: reading %d from memory\n", current->core, total_cycles-cycles, current->dir);
             printf(" └─> data found on level %d\n", location);
             mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
         } else { //(current->op == op_process)
-            printf( "processing\n");
+            printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
             usleep (proc_time);
         }
+        cycles--;
     }
 }
 
 
 int main () {
-    printf( "POST...\n");
+    printf( " =============== POST ===============\n");
     srand(time(0));
 
     // initialize memory
@@ -331,36 +347,38 @@ int main () {
         push_back(&L1b, l1block);
     }
 
-    print_mem(MEM, 4);
-    print_mem(L2a, 4);
-    printf("L1a: "); print_mem(L1a, 4);
-    printf("L1b: "); print_mem(L1b, 4);
-    
-    /*
-    pthread_t cpu1;
-    pthread_t cpu2;
-    pthread_t cpu3;
-    pthread_t cpu4;
-    pthread_t l1;
-    pthread_t l2;
-    pthread_t mem;
-    */  
-
     processor_params *proc1;
     proc1 = malloc(sizeof(processor_params));
     proc1->id = 0;
     proc1->chip = 0;
-        
-    printf("starting cpu 1\n");
-    processor ((void*) proc1);
 
+    processor_params *proc2;
+    proc2 = malloc(sizeof(processor_params));
+    proc2->id = 1;
+    proc2->chip = 0;
+
+    // =============== SIMULATION EXECUTION ===============
+
+    printf(" =============== Starting simulation =============== \n");
+        
+    int ret1 = pthread_create (&cpu1, NULL, processor, proc1);
+    if(ret1) {
+        printf("Error creating core 0: = %d\n", ret1);
+    }
+
+    int ret2 = pthread_create (&cpu2, NULL, processor, proc2);
+    if(ret2) {
+        printf("Error creating core 1: = %d\n", ret2);
+    }
+
+    pthread_join(cpu1, NULL);
+    pthread_join(cpu2, NULL);
 
     print_mem(MEM, 4);
     print_mem(L2a, 4);
     printf("L1a: "); print_mem(L1a, 4);
     printf("L1b: "); print_mem(L1b, 4);
 
- 
     return 0;
 }
 
