@@ -42,7 +42,6 @@ Node_t *L1d = NULL;
 Node_t *L2a = NULL;
 Node_t *L2b = NULL;
 Node_t *MEM = NULL;
-
     
 pthread_t cpu1;
 pthread_t cpu2;
@@ -357,7 +356,10 @@ int main () {
     proc2->id = 1;
     proc2->chip = 0;
 
-    // =============== SIMULATION EXECUTION ===============
+    print_mem(MEM, 4);
+    print_mem(L2a, 4);
+    printf("L1a: "); print_mem(L1a, 4);
+    printf("L1b: "); print_mem(L1b, 4);
 
     printf(" =============== Starting simulation =============== \n");
         
