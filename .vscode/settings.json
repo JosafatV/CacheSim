@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "istream": "c",
+        "ostream": "c",
+        "array": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }

@@ -449,13 +449,13 @@ int main () {
     proc4->id = 3;
     proc4->chip = 1;
 
-    print_mem(MEM, 4);
-    printf("L2a: "); print_mem(L2a, 4);
-    printf("L2b: "); print_mem(L2b, 4);
-    printf("L1a: "); print_mem(L1a, 4);
-    printf("L1b: "); print_mem(L1b, 4);
-    printf("L1c: "); print_mem(L1c, 4);
-    printf("L1d: "); print_mem(L1d, 4);
+    print_mem(MEM, 2);
+    printf("L2a:\n"); print_mem(L2a, 1);
+    printf("L2b:\n"); print_mem(L2b, 1);
+    printf("L1a:\n"); print_mem(L1a, 0);
+    printf("L1b:\n"); print_mem(L1b, 0);
+    printf("L1c:\n"); print_mem(L1c, 0);
+    printf("L1d:\n"); print_mem(L1d, 0);
 
     printf(" =============== Starting simulation =============== \n");
         
@@ -484,13 +484,13 @@ int main () {
     pthread_join(cpu3, NULL);
     pthread_join(cpu4, NULL);
 
-    print_mem(MEM, 4);
-    printf("L2a: "); print_mem(L2a, 4);
-    printf("L2b: "); print_mem(L2b, 4);
-    printf("L1a: "); print_mem(L1a, 4);
-    printf("L1b: "); print_mem(L1b, 4);
-    printf("L1c: "); print_mem(L1c, 4);
-    printf("L1d: "); print_mem(L1d, 4);
+    print_mem(MEM, 2);
+    printf("L2a:\n"); print_mem(L2a, 1);
+    printf("L2b:\n"); print_mem(L2b, 1);
+    printf("L1a:\n"); print_mem(L1a, 0);
+    printf("L1b:\n"); print_mem(L1b, 0);
+    printf("L1c:\n"); print_mem(L1c, 0);
+    printf("L1d:\n"); print_mem(L1d, 0);
 
     return 0;
 }

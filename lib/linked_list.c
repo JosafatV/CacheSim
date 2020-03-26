@@ -5,7 +5,7 @@
 
 #include "../include/linked_list.h"
 
-void print_mem(Node_t *head, int property) {
+void print_list(Node_t *head, int property) {
   Node_t *current = head;
   printf("[");
   while(current != NULL){
@@ -20,6 +20,53 @@ void print_mem(Node_t *head, int property) {
     current = current->next;
   }
   printf("]\n");
+}
+
+/** Prints the memory block of the according level
+ * \param head the linked_list to print
+ * \param level the memory level to print. Use 1 for all attributes
+ */
+void print_mem(Node_t *head, int level) {
+	memory_t* current;
+	int len = get_length(head);
+
+	if (level == 0) {
+		// Print L1 cache attributes
+		for (int i = 0; i<len; i++){
+			current = get_at(head, i);
+			printf("0x0%d [", i);
+			printf(" %d |", current->block);
+			printf(" %d |", current->status);
+			printf(" 0x%d |", current->dir_data);
+			printf(" %d ]\n", current->data);
+		}
+	} else if (level == 2) { 
+		// Print MEM chace attributes
+		for (int i = 0; i<len; i++){
+			current = get_at(head, i);
+			if (i<10) {
+				printf("0x0%d [", i);
+			} else {
+				printf("0x%d [", i);
+			}
+			printf(" %d |", current->status);
+			printf(" %d |", current->core);
+			//printf(" 0x%d |", current->dir_data);
+			printf(" %d ]\n", current->data);
+		}
+	} else {
+		// Print L2 cache attributes (all)
+		for (int i = 0; i<len; i++){
+			current = get_at(head, i);
+			printf("0x0%d [", i);
+			printf(" %d |", current->block);
+			printf(" %d |", current->status);
+			printf(" %d |", current->core);
+			printf(" %d |", current->shared);
+			printf(" 0x%d |", current->dir_data);
+			printf(" %d ]\n", current->data);
+		}
+	}
 }
 
 void print_l2(Node_t *head, int property) {
