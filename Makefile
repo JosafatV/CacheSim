@@ -9,7 +9,8 @@ run:
 
 reset:
 		rm -r bin
-		rm lib/*.o
-		rm src/*.o
-		rm lib/*.a
+		rm lib/*.o || :
+		rm src/*.o || :
+		rm lib/*.a || :
+		rm logs/*.txt || :
 		clear

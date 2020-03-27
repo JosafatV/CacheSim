@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <time.h>
 #include "../include/linked_list.h"
+#include "../include/jvlogger.h"
 
 #define op_process 0
 #define op_read 1
@@ -350,6 +351,7 @@ void* processor (void* params) {
 
 int main () {
     printf( " =============== POST ===============\n");
+    start_logg();
     srand(time(0));
 
     // initialize memory
@@ -456,33 +458,26 @@ int main () {
     print_all();
 
     printf(" =============== Starting simulation =============== \n \n");
+    logg(" =============== Starting simulation =============== \n \n");
         
     int ret1 = pthread_create (&cpu1, NULL, processor, proc1);
-    if(ret1) {
-        printf("Error creating core 0: = %d\n", ret1);
-    }
+    if(ret1) { printf("Error creating core 0: = %d\n", ret1); }
 
     int ret2 = pthread_create (&cpu2, NULL, processor, proc2);
-    if(ret2) {
-        printf("Error creating core 1: = %d\n", ret2);
-    }
+    if(ret2) { printf("Error creating core 1: = %d\n", ret2); }
 
     int ret3 = pthread_create (&cpu3, NULL, processor, proc3);
-    if(ret3) {
-        printf("Error creating core 2: = %d\n", ret3);
-    }
+    if(ret3) { printf("Error creating core 2: = %d\n", ret3); }
 
     int ret4 = pthread_create (&cpu4, NULL, processor, proc4);
-    if(ret4) {
-        printf("Error creating core 3: = %d\n", ret4);
-    }
+    if(ret4) { printf("Error creating core 3: = %d\n", ret4); }
 
     pthread_join(cpu1, NULL);
     pthread_join(cpu2, NULL);
     pthread_join(cpu3, NULL);
     pthread_join(cpu4, NULL);
 
-    printf("+++ Final memory status +++\n");
+    printf("  +++ Final memory status +++  \n");
     print_all();
 
     return 0;

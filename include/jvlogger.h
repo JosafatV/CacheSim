@@ -3,6 +3,7 @@
 
 char read_char (char* read_path);
 
-void write_log (char* data, char* write_path);
+void start_logg () ;
+void logg (char* data);
 
 #endif

@@ -1,23 +1,15 @@
 CC = gcc
-AR = ar
-RL = ranlib
-NM = nm
-LD = ld
-EX = export
-
 SRC = main.c
-EXE = main
+OUT = ../bin/main
 
-LINKEDLIST_LIB = lib_linked_list.a
-LIBS = $(LIB_DIR)$(LINKEDLIST_LIB) 
+LIBLINKEDLIST = ../lib/lib_linked_list.a
+LIBLOGGER = ../lib/libjvlogger.a
 
-LIB_DIR = ../lib/
-INCLUDE_DIR = ../include/
-BIN_DIR = ../bin/
+CFLAGS = -I../include
+LDFLAGS = -L../lib 
 
 main: $(SRC)
-		$(CC) -c $(SRC) -pthread
-		$(CC) -o $(BIN_DIR)$(EXE) $(SRC) $(LIBS) -I$(INCLUDE_DIR) -pthread
+		$(CC) -o $(OUT) $(SRC) $(CFLAGS) $(LDFLAGS) $(LIBLINKEDLIST) $(LIBLOGGER) -pthread
 
 clean:
 		rm ../bin/main
