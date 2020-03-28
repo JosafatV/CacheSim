@@ -47,7 +47,7 @@ Node_t *MEM = NULL;
 pthread_t cpu1;
 pthread_t cpu2;
 pthread_t cpu3;
-pthread_t cpu4;
+pthread_t cpu0;
 pthread_t l1;
 pthread_t l2;
 pthread_t mem;
@@ -317,6 +317,7 @@ void* processor (void* params) {
     int total_cycles = 5;
     int cycles = total_cycles;
     printf("+++ Starting core %d +++\n \n", n_core);
+    logg(3, "+++ Starting core", itoc(n_core)," +++");
     while (cycles){
         // create instruction
         current->core = n_core;
@@ -358,8 +359,10 @@ int main () {
     for (int i = 0; i < 16; i++) {
         memory_t *memblock;
         memblock = malloc(sizeof(memory_t));
+        memblock->block = 0;
         memblock->status = Valid;
         memblock->core = 0;
+        memblock->shared = 0;
         memblock->dir_data = i;
         memblock->data = rand()%256;
         
@@ -396,7 +399,8 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = Invalid;
+        l1block->block = 0;
+        l1block->status = Invalid;
         l1block->core = 0;
         l1block->dir_data = -1;
         l1block->data = 0;
@@ -406,8 +410,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = Invalid;
-        l1block->core = 0;
+        l1block->block = 1;
+        l1block->status = Invalid;
+        l1block->core = 1;
+        l1block->shared = 0;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -416,8 +422,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = Invalid;
-        l1block->core = 0;
+        l1block->block = 2;
+        l1block->status = Invalid;
+        l1block->core = 2;
+        l1block->shared = 0;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -426,8 +434,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = Invalid;
-        l1block->core = 0;
+        l1block->block = 3;
+        l1block->status = Invalid;
+        l1block->core = 3;
+        l1block->shared = 0;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -435,47 +445,47 @@ int main () {
     }
 
     // Initialize processor parameters
+    processor_params *proc0;
+    proc0 = malloc(sizeof(processor_params));
+    proc0->id = 0;
+    proc0->chip = 1;
+
     processor_params *proc1;
     proc1 = malloc(sizeof(processor_params));
-    proc1->id = 0;
+    proc1->id = 1;
     proc1->chip = 0;
 
     processor_params *proc2;
     proc2 = malloc(sizeof(processor_params));
-    proc2->id = 1;
+    proc2->id = 2;
     proc2->chip = 0;
 
     processor_params *proc3;
     proc3 = malloc(sizeof(processor_params));
-    proc3->id = 2;
+    proc3->id = 3;
     proc3->chip = 1;
-
-    processor_params *proc4;
-    proc4 = malloc(sizeof(processor_params));
-    proc4->id = 3;
-    proc4->chip = 1;
     
     print_all();
 
     printf(" =============== Starting simulation =============== \n \n");
-    logg(" =============== Starting simulation =============== \n \n");
+    logg(1, " =============== Starting simulation =============== ");
+
+    int ret0 = pthread_create (&cpu0, NULL, processor, proc0);
+    if(ret0) { printf("Error creating core 0: = %d\n", ret0); }
         
     int ret1 = pthread_create (&cpu1, NULL, processor, proc1);
-    if(ret1) { printf("Error creating core 0: = %d\n", ret1); }
+    if(ret1) { printf("Error creating core 1: = %d\n", ret1); }
 
     int ret2 = pthread_create (&cpu2, NULL, processor, proc2);
-    if(ret2) { printf("Error creating core 1: = %d\n", ret2); }
+    if(ret2) { printf("Error creating core 2: = %d\n", ret2); }
 
     int ret3 = pthread_create (&cpu3, NULL, processor, proc3);
-    if(ret3) { printf("Error creating core 2: = %d\n", ret3); }
+    if(ret3) { printf("Error creating core 3: = %d\n", ret3); }
 
-    int ret4 = pthread_create (&cpu4, NULL, processor, proc4);
-    if(ret4) { printf("Error creating core 3: = %d\n", ret4); }
-
+    pthread_join(cpu0, NULL);
     pthread_join(cpu1, NULL);
     pthread_join(cpu2, NULL);
     pthread_join(cpu3, NULL);
-    pthread_join(cpu4, NULL);
 
     printf("  +++ Final memory status +++  \n");
     print_all();

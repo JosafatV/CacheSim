@@ -1,10 +1,24 @@
 #include <stdio.h> 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 
 //const char* read_path = "/home/josav09/Documents/C tests/fileReader/readme.txt";
 const char* write_path = "./logs/log.txt";
 
+/** converts an integer to a char * that can be printed
+ * \param num the number to convert
+ */
+char *itoc (int num) {
+	char store[50]; 
+	sprintf(store, "%d", num);
+	char* result = &store[0];
+	return result;
+}
+
+/** Reads a character from a file. TODO: make it read a line or the whole file
+ * \param read_path the file of the path that is being read
+ */
 char read_char (char* read_path) {
 	FILE *fp;
 
@@ -16,21 +30,18 @@ char read_char (char* read_path) {
       exit(EXIT_FAILURE);
    }
 
-   printf("The contents of the file are:\n");
-
 	char ch;
 	ch = fgetc(fp);
 	printf("%c", ch);
-	/*
-    while((ch = fgetc(fp)) != EOF) {
-		printf("%c", ch);
-	}*/
 
    fclose(fp);
    
    return ch;
 }
 
+/** Creates or overwrittes a new file log.txt in a known location (./logs)
+ * and sets the 1st line as the local date
+ */
 void start_logg () {
 	FILE *fp;
 	fp = fopen(write_path, "w");
@@ -52,8 +63,14 @@ void start_logg () {
 	fclose(fp);
 }
 
-void logg (char* data) {
+/** logs a set of data into a known file by appending it. Finishes the log with a newline.
+ * Create the file with "start_logg"
+ * \param num the amount of data arguments passed to the function
+ * \param char the data to be logged into the file
+ */
+void logg (int num, ...) {
 	FILE *fp;
+	va_list arglist;
 	char* newline = "\n";
 	fp = fopen(write_path, "a"); // append mode
 
@@ -61,8 +78,13 @@ void logg (char* data) {
 		perror("Error while opening the file.\n");
 		exit(EXIT_FAILURE);
     }
-	fprintf(fp, "%s", data);
+
+	va_start(arglist, num);
+	for (int i=0; i<num; i++) {
+		fprintf(fp, "%s", va_arg(arglist, char*));
+	}	
 	fprintf(fp, "%s", newline);
 
+	va_end(arglist);
 	fclose(fp);
 }
