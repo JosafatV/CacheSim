@@ -136,58 +136,6 @@ int check_mem(int level, int cpu, int chip, int addr) {
     }
 }
 
-/** Checks the other chip to set the data in cache and update it. Monitoring algorithm with update
- * \param cpu the cpu that is writting the data
- * \param chip the chip that is writting the data
- * \param addr the address that is being written
- */
-void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
-    if (chip) {
-        // Update the status of data in chip 0
-        if (get_at(L2b, addr%4)->dir_data == addr) {
-            set_at(L2b, addr%4, new_data);
-        }
-        if (get_at(L1c, addr%2)->dir_data == addr) {
-            set_at(L1c, addr%2, new_data);
-        }
-        if (get_at(L1d, addr%2)->dir_data == addr) {
-            set_at(L1d, addr%2, new_data);
-        }
-    	// Update the status of the L1 that is not writting
-        if (cpu) { 
-            if (get_at(L1a, addr%2)->dir_data == addr) {
-                set_at(L1a, addr%2, new_data);
-            }            
-        } else {
-            if (get_at(L1b, addr%2)->dir_data == addr) {
-                set_at(L1b, addr%2, new_data);
-            }
-            
-		}
-    } else {
-        // Update the status of data in chip 1
-        if (get_at(L2a, addr%4)->dir_data == addr) {
-            set_at(L2a, addr%4, new_data);
-        }
-        if (get_at(L1a, addr%2)->dir_data == addr) {
-            set_at(L1a, addr%2, new_data);
-        }   
-        if (get_at(L1b, addr%2)->dir_data == addr) {
-            set_at(L1b, addr%2, new_data);
-        }
-		// Update the status of the L1 that is not writting
-        if (cpu==3) {
-            if (get_at(L1d, addr%2)->dir_data == addr) {
-                set_at(L1d, addr%2, new_data);
-            }
-        } else {
-            if (get_at(L1c, addr%2)->dir_data == addr) {
-                set_at(L1c, addr%2, new_data);
-            }
-		}
-    }
-}
-
 /** After a MISS, updates the data on upper levels of memory to contain the searched-for data. Access penalties are in check_mem
  * \param level in which level the data was found
  * \param cpu which cpu core is looking for the data
