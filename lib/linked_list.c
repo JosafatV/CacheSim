@@ -238,7 +238,7 @@ memory_t* get_at(Node_t *head, int index) {
   return retval;
 }
 
-memory_t *set_at(Node_t *head,  int index, memory_t *value) {
+memory_t *set_at(Node_t *head, int index, memory_t *value) {
   memory_t * retval = NULL;
 
   if(get_length(head) <= index || index < 0){

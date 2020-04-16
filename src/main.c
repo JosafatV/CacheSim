@@ -142,47 +142,61 @@ int check_mem(int level, int cpu, int chip, int addr) {
  * \param addr the address that is being written
  */
 void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
-    if (chip) {
+    if (!chip) {
         // Update the status of data in chip 0
         if (get_at(L2b, addr%4)->dir_data == addr) {
-            set_at(L2b, addr%4, new_data);
+            L2b->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L2b +++\n", addr);
+            //set_at(L2b, addr%4, new_data);
         }
         if (get_at(L1c, addr%2)->dir_data == addr) {
-            set_at(L1c, addr%2, new_data);
+            L1c->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
+            //set_at(L1c, addr%2, new_data);
         }
         if (get_at(L1d, addr%2)->dir_data == addr) {
-            set_at(L1d, addr%2, new_data);
+            L1d->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
+            //set_at(L1d, addr%2, new_data);
         }
     	// Update the status of the L1 that is not writting
         if (cpu) { 
             if (get_at(L1a, addr%2)->dir_data == addr) {
-                set_at(L1a, addr%2, new_data);
+                L1a->value->status=Invalid;
+                printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
+                //set_at(L1a, addr%2, new_data);
             }            
         } else {
             if (get_at(L1b, addr%2)->dir_data == addr) {
-                set_at(L1b, addr%2, new_data);
+                L1b->value->status=Invalid;
+                printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
+                //set_at(L1b, addr%2, new_data);
             }
-            
 		}
     } else {
         // Update the status of data in chip 1
         if (get_at(L2a, addr%4)->dir_data == addr) {
-            set_at(L2a, addr%4, new_data);
+            L2a->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L2a +++\n", addr);
         }
         if (get_at(L1a, addr%2)->dir_data == addr) {
-            set_at(L1a, addr%2, new_data);
+                L1a->value->status=Invalid;
+                printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
         }   
         if (get_at(L1b, addr%2)->dir_data == addr) {
-            set_at(L1b, addr%2, new_data);
+                L1b->value->status=Invalid;
+                printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
         }
 		// Update the status of the L1 that is not writting
-        if (cpu==3) {
+        if (cpu==2) {
             if (get_at(L1d, addr%2)->dir_data == addr) {
-                set_at(L1d, addr%2, new_data);
+            L1d->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
             }
         } else {
             if (get_at(L1c, addr%2)->dir_data == addr) {
-                set_at(L1c, addr%2, new_data);
+            L1c->value->status = Invalid;
+            printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
             }
 		}
     }
@@ -199,7 +213,6 @@ void mmu_read (int level, int cpu, int chip, int addr) {
         // Data is in L2. Read and elevate to L1
         memory_t *data_l2;
         data_l2 = (memory_t*) malloc(sizeof(memory_t));
-        
         if (chip == 0) {
 			data_l2 = get_at(L2a, addr%4);
         } else {
@@ -264,7 +277,7 @@ void mmu_read (int level, int cpu, int chip, int addr) {
 void mmu_write (int cpu, int chip, int addr, int data){
 	memory_t * new_data;
 	new_data = (memory_t *) malloc(sizeof(memory_t));
-	new_data->block = 0;		// ???
+	new_data->block = chip;		// Confirm
 	new_data->status = Valid;	// Update
 	new_data->core = cpu;
 	new_data->shared = 0;		// Update
@@ -291,7 +304,6 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	}
 
 	// Send to BUS (Write-through L2)
-    
 	usleep(l2_penalty);
 	if (chip == 0){
 		set_at(L2a, addr%4, new_data);
@@ -304,7 +316,6 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	// Send to BUS (Write-through MEM)
 	usleep(mem_penalty);
 	set_at(MEM, addr, new_data);
-    //pthread_mutex_unlock(&mem_lock);
 }
 
 void* processor (void* params) {
@@ -314,7 +325,7 @@ void* processor (void* params) {
 
    instr_t* current;
    current = malloc(sizeof(instr_t));
-    int total_cycles = 5;
+    int total_cycles = 10;
     int cycles = total_cycles;
     printf("+++ Starting core %d +++\n \n", n_core);
     logg(3, "+++ Starting core", itoc(n_core)," +++");
@@ -328,8 +339,10 @@ void* processor (void* params) {
 
         if (current->op == op_write) {     
             pthread_mutex_lock(&mem_lock);
-            printf( "core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
+            printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
 			printf(" └─> data written to 0x%d\n", current->dir);
+            //logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": writting ", itoc(current->data), " to memory");
+            //logg(2, " └─> data written to 0x", itoc(current->dir));
 			mmu_write (current->core, current->chip, current->dir, current->data);
             print_all();
             pthread_mutex_unlock(&mem_lock);
@@ -339,11 +352,14 @@ void* processor (void* params) {
             pthread_mutex_lock(&mem_lock);
             printf("core %d, cycle %d: reading 0x%d from memory\n", current->core, total_cycles-cycles, current->dir);
             printf(" └─> data found on level %d\n", location);
+            //logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": reading 0x", itoc(current->dir), " from memory");
+            //logg(2, " └─> data found on level ", itoc(location));
             mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
             print_all();
             pthread_mutex_unlock(&mem_lock);
         } else { //(current->op == op_process)
             printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
+            //logg(5, "core ", itoc(current->core), " cycle ", itoc(total_cycles-cycles), ": processing");
             usleep (proc_time);
         }
         cycles--;
@@ -448,7 +464,7 @@ int main () {
     processor_params *proc0;
     proc0 = malloc(sizeof(processor_params));
     proc0->id = 0;
-    proc0->chip = 1;
+    proc0->chip = 0;
 
     processor_params *proc1;
     proc1 = malloc(sizeof(processor_params));
@@ -458,13 +474,14 @@ int main () {
     processor_params *proc2;
     proc2 = malloc(sizeof(processor_params));
     proc2->id = 2;
-    proc2->chip = 0;
+    proc2->chip = 1;
 
     processor_params *proc3;
     proc3 = malloc(sizeof(processor_params));
     proc3->id = 3;
     proc3->chip = 1;
     
+    print_mem(MEM, 2);
     print_all();
 
     printf(" =============== Starting simulation =============== \n \n");
@@ -488,6 +505,7 @@ int main () {
     pthread_join(cpu3, NULL);
 
     printf("  +++ Final memory status +++  \n");
+    print_mem(MEM, 2);
     print_all();
 
     return 0;

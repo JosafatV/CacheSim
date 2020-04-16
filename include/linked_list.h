@@ -12,7 +12,7 @@
 
 // Unified memory struct needed for linked_list compatibility
 typedef struct {	//  L1	L2	Mem  pN
-  	int block;		//  X   X    	 0 		???
+  	int block;		//  X   X    	 0 		In which chip is the data
 	int status;		//  X   X   X	 1		in which state is the data (enum status)
 	int core;		//      X   X	 2		Which CPU "owns" the data
 	int shared;		//	    X    	 3		??? flag, may be redundant with status
@@ -26,7 +26,7 @@ typedef struct Node{
 	struct Node* next;
 } Node_t;
 
-// Type of status the data can have, based on the MSI protocol
+// Type of status the data can have, based on the MSI protocol VALID is only for testing/developing purposes
 enum status {Valid = 3, Modified = 2, Shared = 1, Invalid = 0};
 
 //prints the ids of the package
