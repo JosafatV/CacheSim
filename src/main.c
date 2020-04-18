@@ -43,6 +43,7 @@ Node_t *L1d = NULL;
 Node_t *L2a = NULL;
 Node_t *L2b = NULL;
 Node_t *MEM = NULL;
+Node_t *DIR = NULL;
     
 pthread_t cpu1;
 pthread_t cpu2;
@@ -56,6 +57,7 @@ pthread_mutex_t mem_lock;
 
 void print_all(){
     //print_mem(MEM, 2);
+    printf("DIR:\n"); print_mem(DIR, 2);
     printf("L2a:\n"); print_mem(L2a, 1);
     printf("L2b:\n"); print_mem(L2b, 1);
     printf("L1a:\n"); print_mem(L1a, 0);
@@ -134,6 +136,62 @@ int check_mem(int level, int cpu, int chip, int addr) {
         usleep(mem_penalty);
         return level;
     }
+}
+
+
+/** Updates the status in the directory after a write op has been made.
+ * MEM 00-15 | L2a 16-19 | L2b 20-23 | L1a 24-25 | L1b 26-27 | L1c 28-29 | L1d 30-31
+ * \param cpu the cpu that is writting the data
+ * \param chip the chip that is writting the data
+ * \param addr the address that is being modified
+*/
+int update_dir (int cpu, int chip, int addr) {
+    int addr2 = addr%2;
+    int addr4 = addr%4;
+    int l2a_addr = 16+addr4;
+    int l2b_addr = 20+addr4;
+    int l1a_addr = 24+addr2;
+    int l1b_addr = 26+addr2;
+    int l1c_addr = 28+addr2;
+    int l1d_addr = 30+addr2;
+
+    // If L2a is updated (cpu_0 or cpu_1 write) and the data is in L2b, update status in L2b
+    if (chip == 0 && get_at(DIR, l2b_addr)->dir_data == addr) {
+        memory_t *new_l2 = get_at(DIR, l2b_addr);
+        new_l2->status = 0;
+        set_at(DIR, l2b_addr, new_l2);
+    } else if ( chip == 1 && get_at(DIR, l2a_addr)->dir_data == addr) {
+        memory_t *new_l2 = get_at(DIR, l2a_addr);
+        new_l2->status = 0;
+        set_at(DIR, l2a_addr, new_l2);
+    }
+
+    // Update the other L1 cache blocks if the data is in them
+    if (cpu!=0, get_at(DIR, l1a_addr)->dir_data == addr) {
+        memory_t *new_l1 = get_at(DIR, l1a_addr);
+        new_l1->status = 0;
+        set_at(DIR, l1a_addr, new_l1);
+        //set_at(L1a, addr%2, new_l1); // Update MEM
+    }
+    if (cpu!=1, get_at(DIR, l1b_addr)->dir_data == addr) {
+        memory_t *new_l1 = get_at(DIR, l1b_addr);
+        new_l1->status = 0;
+        set_at(DIR, l1b_addr, new_l1);
+        //set_at(L1b, addr%2, new_l1); // Update MEM
+    }    
+    if (cpu!=2, get_at(DIR, l1c_addr)->dir_data == addr) {
+        memory_t *new_l1 = get_at(DIR, l1c_addr);
+        new_l1->status = 0;
+        set_at(DIR, l1c_addr, new_l1);
+        //set_at(L1c, addr%2, new_l1); // Update MEM
+    }
+    if (cpu!=3, get_at(DIR, l1d_addr)->dir_data == addr) {
+        memory_t *new_l1 = get_at(DIR, l1d_addr);
+        new_l1->status = 0;
+        set_at(DIR, l1d_addr, new_l1);
+        //set_at(L1d, addr%2, new_l1); // Update MEM
+    }
+        
 }
 
 /** After a MISS, updates the data on upper levels of memory to contain the searched-for data. Access penalties are in check_mem
@@ -241,12 +299,12 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	// Send to BUS (Write-through L2)
     
 	usleep(l2_penalty);
-	if (chip == 0){
+	if (chip == 0) {
 		set_at(L2a, addr%4, new_data);
-        invalidation_monitor(cpu, chip, addr, new_data);
+        update_dir(cpu, chip, addr);
 	} else {
 		set_at(L2b, addr%4, new_data);
-		invalidation_monitor(cpu, chip, addr, new_data);
+		update_dir(cpu, chip, addr);
 	}
 
 	// Send to BUS (Write-through MEM)
@@ -315,6 +373,20 @@ int main () {
         memblock->data = rand()%256;
         
         push_back(&MEM, memblock);
+    }
+
+        // initialize directory
+    for (int i = 0; i < 32; i++) {
+        memory_t *memblock;
+        memblock = malloc(sizeof(memory_t));
+        memblock->block = 0;
+        memblock->status = Valid;
+        memblock->core = 0;
+        memblock->shared = 0;
+        memblock->dir_data = i;
+        memblock->data = rand()%256;
+        
+        push_back(&DIR, memblock);
     }
 
     // initialize l2 cache blocks 

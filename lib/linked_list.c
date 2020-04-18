@@ -220,6 +220,7 @@ int get_length(Node_t *head) {
   return retval;
 }
 
+//** Return a memory_t from head
 memory_t* get_at(Node_t *head, int index) {
   memory_t * retval = NULL;
 
