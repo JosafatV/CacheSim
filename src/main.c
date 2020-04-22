@@ -18,22 +18,22 @@
 volatile int bus_mem = 0;
 
 typedef struct {
-    int core;
-    int chip;
-    int op;
-    int dir;
-    int data;
+	int core;
+	int chip;
+	int op;
+	int dir;
+	int data;
 } instr_t;
 
 typedef struct {
-    int id;
-    int chip;
+	int id;
+	int chip;
 } processor_params;
 
 typedef struct {
-    int active;
-    int operation; // read or write
-    memory_t data;
+	int active;
+	int operation; // read or write
+	memory_t data;
 } bus_t;
 
 Node_t *L1a = NULL;
@@ -43,7 +43,7 @@ Node_t *L1d = NULL;
 Node_t *L2a = NULL;
 Node_t *L2b = NULL;
 Node_t *MEM = NULL;
-    
+	
 pthread_t cpu1;
 pthread_t cpu2;
 pthread_t cpu3;
@@ -55,14 +55,14 @@ pthread_t mem;
 pthread_mutex_t mem_lock;
 
 void print_all(){
-    //print_mem(MEM, 2);
-    printf("L2a:\n"); print_mem(L2a, 1);
-    printf("L2b:\n"); print_mem(L2b, 1);
-    printf("L1a:\n"); print_mem(L1a, 0);
-    printf("L1b:\n"); print_mem(L1b, 0);
-    printf("L1c:\n"); print_mem(L1c, 0);
-    printf("L1d:\n"); print_mem(L1d, 0);
-    printf("\n");
+	//print_mem(MEM, 2);
+	printf("L2a:\n"); print_mem(L2a, 1);
+	printf("L2b:\n"); print_mem(L2b, 1);
+	printf("L1a:\n"); print_mem(L1a, 0);
+	printf("L1b:\n"); print_mem(L1b, 0);
+	printf("L1c:\n"); print_mem(L1c, 0);
+	printf("L1d:\n"); print_mem(L1d, 0);
+	printf("\n");
 }
 
 /**  finds a data object in memory, simulates memory access penalty
@@ -73,67 +73,67 @@ void print_all(){
  * \return At what level was the data found
  */ 
 int check_mem(int level, int cpu, int chip, int addr) {
-    if (level == 0) { // check L1
-        usleep(l1_penalty);
-        switch (cpu) {
-        memory_t * searched_data;
-        case 0:
-            searched_data = get_at(L1a, addr%2);
-            if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
-            } else {
-                return level; // data found
-            } 
-            break;
-        case 1:
-            searched_data = get_at(L1b, addr%2);
-            if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
-            } else {
-                return level; // data found
-            } 
-            break;
-        case 2:
-            searched_data = get_at(L1c, addr%2);
-            if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
-            } else {
-                return level; // data found
-            } 
-            break;
-        case 3:
-            searched_data = get_at(L1d, addr%2);
-            if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
-            } else {
-                return level; // data found
-            } 
-            break;
-        default:
-            return check_mem(level+1, cpu, chip, addr);
-            break;
-        }
-    } else if (level == 1) { // check L2
-        usleep(l2_penalty);
-        if (chip == 0) {
-            memory_t * searched_data = get_at(L2a, addr%4);
-            if (searched_data->status == Invalid || searched_data->dir_data != addr) { // data is invalid or its not it
-                return check_mem(level+1, cpu, chip, addr%4);
-            } else {
-                return level;
-            }
-        } else {
-            memory_t * searched_data = get_at(L2b, addr%4);
-            if (searched_data->status == Invalid) {
-                return check_mem(level+1, cpu, chip, addr%4);
-            } else {
-                return level;
-            }
-        }
-    } else { // check MEM
-        usleep(mem_penalty);
-        return level;
-    }
+	if (level == 0) { // check L1
+		usleep(l1_penalty);
+		switch (cpu) {
+		memory_t * searched_data;
+		case 0:
+			searched_data = get_at(L1a, addr%2);
+			if (searched_data->status == Invalid || searched_data->dir_data != addr) {
+				return check_mem(level+1, cpu, chip, addr);
+			} else {
+				return level; // data found
+			} 
+			break;
+		case 1:
+			searched_data = get_at(L1b, addr%2);
+			if (searched_data->status == Invalid || searched_data->dir_data != addr) {
+				return check_mem(level+1, cpu, chip, addr);
+			} else {
+				return level; // data found
+			} 
+			break;
+		case 2:
+			searched_data = get_at(L1c, addr%2);
+			if (searched_data->status == Invalid || searched_data->dir_data != addr) {
+				return check_mem(level+1, cpu, chip, addr);
+			} else {
+				return level; // data found
+			} 
+			break;
+		case 3:
+			searched_data = get_at(L1d, addr%2);
+			if (searched_data->status == Invalid || searched_data->dir_data != addr) {
+				return check_mem(level+1, cpu, chip, addr);
+			} else {
+				return level; // data found
+			} 
+			break;
+		default:
+			return check_mem(level+1, cpu, chip, addr);
+			break;
+		}
+	} else if (level == 1) { // check L2
+		usleep(l2_penalty);
+		if (chip == 0) {
+			memory_t * searched_data = get_at(L2a, addr%4);
+			if (searched_data->status == Invalid || searched_data->dir_data != addr) { // data is invalid or its not it
+				return check_mem(level+1, cpu, chip, addr%4);
+			} else {
+				return level;
+			}
+		} else {
+			memory_t * searched_data = get_at(L2b, addr%4);
+			if (searched_data->status == Invalid) {
+				return check_mem(level+1, cpu, chip, addr%4);
+			} else {
+				return level;
+			}
+		}
+	} else { // check MEM
+		usleep(mem_penalty);
+		return level;
+	}
 }
 
 /** Checks the other chip to set the data in cache and update it. Monitoring algorithm with update
@@ -142,64 +142,101 @@ int check_mem(int level, int cpu, int chip, int addr) {
  * \param addr the address that is being written
  */
 void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
-    if (!chip) {
-        // Update the status of data in chip 0
-        if (get_at(L2b, addr%4)->dir_data == addr) {
-            L2b->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L2b +++\n", addr);
-            //set_at(L2b, addr%4, new_data);
-        }
-        if (get_at(L1c, addr%2)->dir_data == addr) {
-            L1c->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
-            //set_at(L1c, addr%2, new_data);
-        }
-        if (get_at(L1d, addr%2)->dir_data == addr) {
-            L1d->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
-            //set_at(L1d, addr%2, new_data);
-        }
-    	// Update the status of the L1 that is not writting
-        if (cpu) { 
-            if (get_at(L1a, addr%2)->dir_data == addr) {
-                L1a->value->status=Invalid;
-                printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
-                //set_at(L1a, addr%2, new_data);
-            }            
-        } else {
-            if (get_at(L1b, addr%2)->dir_data == addr) {
-                L1b->value->status=Invalid;
-                printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
-                //set_at(L1b, addr%2, new_data);
-            }
+	int addr2 = addr%2;
+	int addr4 = addr%4;
+	// Access penalty
+	usleep(l2_penalty);
+	usleep(l1_penalty);
+	usleep(l1_penalty);
+	usleep(l1_penalty);
+	if (!chip) {
+		// Update the status of data in chip 0
+		if (get_at(L2b, addr4)->dir_data == addr) {
+			usleep(l2_penalty);
+			memory_t* new_data = get_at(L2b, addr4);
+			new_data->status = Invalid;
+			set_at(L2b, addr4, new_data);
+			printf("+++ IM updated status of 0x%d in L2b +++\n", addr);
+			//set_at(L2b, addr%4, new_data);
 		}
-    } else {
-        // Update the status of data in chip 1
-        if (get_at(L2a, addr%4)->dir_data == addr) {
-            L2a->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L2a +++\n", addr);
-        }
-        if (get_at(L1a, addr%2)->dir_data == addr) {
-                L1a->value->status=Invalid;
-                printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
-        }   
-        if (get_at(L1b, addr%2)->dir_data == addr) {
-                L1b->value->status=Invalid;
-                printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
-        }
+		if (get_at(L1c, addr2)->dir_data == addr) {
+			usleep(l1_penalty);
+			memory_t* new_data = get_at(L1c, addr2);
+			new_data->status = Invalid;
+			set_at(L1c, addr2, new_data);
+			printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
+			//set_at(L1c, addr%2, new_data);
+		}
+		if (get_at(L1d, addr2)->dir_data == addr) {
+			usleep(l1_penalty);
+			memory_t* new_data = get_at(L1d, addr2);
+			new_data->status = Invalid;
+			set_at(L1d, addr2, new_data);
+			printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
+			//set_at(L1d, addr%2, new_data);
+		}
 		// Update the status of the L1 that is not writting
-        if (cpu==2) {
-            if (get_at(L1d, addr%2)->dir_data == addr) {
-            L1d->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
-            }
-        } else {
-            if (get_at(L1c, addr%2)->dir_data == addr) {
-            L1c->value->status = Invalid;
-            printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
-            }
+		if (cpu) { 
+			if (get_at(L1a, addr%2)->dir_data == addr) {
+				usleep(l1_penalty);
+				memory_t* new_data = get_at(L1a, addr2);
+				new_data->status = Invalid;
+				set_at(L1a, addr2, new_data);
+				printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
+				//set_at(L1a, addr%2, new_data);
+			}            
+		} else {
+			if (get_at(L1b, addr%2)->dir_data == addr) {
+				usleep(l1_penalty);
+				memory_t* new_data = get_at(L1b, addr2);
+				new_data->status = Invalid;
+				set_at(L1b, addr2, new_data);
+				printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
+				//set_at(L1b, addr%2, new_data);
+			}
 		}
-    }
+	} else {
+		// Update the status of data in chip 1
+		if (get_at(L2a, addr%4)->dir_data == addr) {
+			usleep(l2_penalty);
+			memory_t* new_data = get_at(L2a, addr4);
+			new_data->status = Invalid;
+			set_at(L2a, addr4, new_data);
+			printf("+++ IM updated status of 0x%d in L2a +++\n", addr);
+		}
+		if (get_at(L1a, addr%2)->dir_data == addr) {
+			usleep(l1_penalty);
+			memory_t* new_data = get_at(L1a, addr2);
+			new_data->status = Invalid;
+			set_at(L1a, addr2, new_data);
+			printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
+		}   
+		if (get_at(L1b, addr%2)->dir_data == addr) {
+			usleep(l1_penalty);
+			memory_t* new_data = get_at(L1b, addr2);
+			new_data->status = Invalid;
+			set_at(L1b, addr2, new_data);
+			printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
+		}
+		// Update the status of the L1 that is not writting
+		if (cpu==2) {
+			if (get_at(L1d, addr%2)->dir_data == addr) {
+			usleep(l1_penalty);
+				memory_t* new_data = get_at(L1d, addr%2);
+				new_data->status = Invalid;
+				set_at(L1d, addr2, new_data);
+				printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
+			}
+		} else {
+			if (get_at(L1c, addr%2)->dir_data == addr) {
+			usleep(l1_penalty);
+			memory_t* new_data = get_at(L1c, addr2);
+			new_data->status = Invalid;
+			set_at(L1c, addr2, new_data);
+			printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
+			}
+		}
+	}
 }
 
 /** After a MISS, updates the data on upper levels of memory to contain the searched-for data. Access penalties are in check_mem
@@ -209,60 +246,60 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
  * \param addr which data is being looked for
   */
 void mmu_read (int level, int cpu, int chip, int addr) {
-    if (level == 1) {
-        // Data is in L2. Read and elevate to L1
-        memory_t *data_l2;
-        data_l2 = (memory_t*) malloc(sizeof(memory_t));
-        if (chip == 0) {
+	if (level == 1) {
+		// Data is in L2. Read and elevate to L1
+		memory_t *data_l2;
+		data_l2 = (memory_t*) malloc(sizeof(memory_t));
+		if (chip == 0) {
 			data_l2 = get_at(L2a, addr%4);
-        } else {
-            data_l2 = get_at(L2b, addr%4);
-        }
+		} else {
+			data_l2 = get_at(L2b, addr%4);
+		}
 
-        switch (cpu) {
-            case 0:
-                set_at(L1a, addr%2, data_l2);
-                break;
-            case 1:
-                set_at(L1b, addr%2, data_l2);
-                break;
-            case 2:
-                set_at(L1c, addr%2, data_l2);
-                break;
-            case 3:
-                set_at(L1d, addr%2, data_l2);
-                break;
-            default:
-                break;
-        }
-    } else if (level == 2) {
-        // Data is in MEM. Read and elevate to L2 and L1
-        memory_t *data_mem;
-        data_mem = (memory_t*) malloc(sizeof(memory_t));
-	    data_mem = get_at(MEM, addr);
+		switch (cpu) {
+			case 0:
+				set_at(L1a, addr%2, data_l2);
+				break;
+			case 1:
+				set_at(L1b, addr%2, data_l2);
+				break;
+			case 2:
+				set_at(L1c, addr%2, data_l2);
+				break;
+			case 3:
+				set_at(L1d, addr%2, data_l2);
+				break;
+			default:
+				break;
+		}
+	} else if (level == 2) {
+		// Data is in MEM. Read and elevate to L2 and L1
+		memory_t *data_mem;
+		data_mem = (memory_t*) malloc(sizeof(memory_t));
+		data_mem = get_at(MEM, addr);
 
-        if (chip == 0) {
+		if (chip == 0) {
 			set_at(L2a, addr%4, data_mem);
-        } else {
-            set_at(L2b, addr%4, data_mem);
-        }
+		} else {
+			set_at(L2b, addr%4, data_mem);
+		}
 
-        switch (cpu) {
-            case 0:
-                set_at(L1a, addr%2, data_mem);
-                break;
-            case 1:
-                set_at(L1b, addr%2, data_mem);
-                break;
-            case 2:
-                set_at(L1c, addr%2, data_mem);
-                break;
-            case 3:
-                set_at(L1d, addr%2, data_mem);
-                break;
-            default:
-                break;
-        }
+		switch (cpu) {
+			case 0:
+				set_at(L1a, addr%2, data_mem);
+				break;
+			case 1:
+				set_at(L1b, addr%2, data_mem);
+				break;
+			case 2:
+				set_at(L1c, addr%2, data_mem);
+				break;
+			case 3:
+				set_at(L1d, addr%2, data_mem);
+				break;
+			default:
+				break;
+		}
 	} else {
 		; // if (level == 0) Data is in L1. No action needed
 	}
@@ -307,207 +344,207 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	usleep(l2_penalty);
 	if (chip == 0){
 		set_at(L2a, addr%4, new_data);
-        invalidation_monitor(cpu, chip, addr, new_data);
 	} else {
 		set_at(L2b, addr%4, new_data);
-		invalidation_monitor(cpu, chip, addr, new_data);
 	}
 
 	// Send to BUS (Write-through MEM)
 	usleep(mem_penalty);
 	set_at(MEM, addr, new_data);
+
+	invalidation_monitor(cpu, chip, addr, new_data);
 }
 
 void* processor (void* params) {
-    processor_params *p = (processor_params*) params;
-    int n_core = p->id;
-    int n_chip = p->chip;
+	processor_params *p = (processor_params*) params;
+	int n_core = p->id;
+	int n_chip = p->chip;
 
    instr_t* current;
    current = malloc(sizeof(instr_t));
-    int total_cycles = 10;
-    int cycles = total_cycles;
-    printf("+++ Starting core %d +++\n \n", n_core);
-    logg(3, "+++ Starting core", itoc(n_core)," +++");
-    while (cycles){
-        // create instruction
-        current->core = n_core;
-        current->chip = n_chip;
-        current->op = (rand() % 3);
-        current->dir = (rand() % 16);
-        current->data = (rand() % 1024);
+	int total_cycles = 10;
+	int cycles = total_cycles;
+	printf("+++ Starting core %d +++\n \n", n_core);
+	logg(3, "+++ Starting core", itoc(n_core)," +++");
+	while (cycles){
+		// create instruction
+		current->core = n_core;
+		current->chip = n_chip;
+		current->op = (rand() % 3);
+		current->dir = (rand() % 16);
+		current->data = (rand() % 1024);
 
-        if (current->op == op_write) {     
-            pthread_mutex_lock(&mem_lock);
-            printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
+		if (current->op == op_write) {     
+			pthread_mutex_lock(&mem_lock);
+			printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
 			printf(" └─> data written to 0x%d\n", current->dir);
-            //logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": writting ", itoc(current->data), " to memory");
-            //logg(2, " └─> data written to 0x", itoc(current->dir));
+			//logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": writting ", itoc(current->data), " to memory");
+			//logg(2, " └─> data written to 0x", itoc(current->dir));
 			mmu_write (current->core, current->chip, current->dir, current->data);
-            print_all();
-            pthread_mutex_unlock(&mem_lock);
-        }
-        else if (current->op == op_read) {
-            int location = check_mem(0, current->core, current->chip, current->dir);
-            pthread_mutex_lock(&mem_lock);
-            printf("core %d, cycle %d: reading 0x%d from memory\n", current->core, total_cycles-cycles, current->dir);
-            printf(" └─> data found on level %d\n", location);
-            //logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": reading 0x", itoc(current->dir), " from memory");
-            //logg(2, " └─> data found on level ", itoc(location));
-            mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
-            print_all();
-            pthread_mutex_unlock(&mem_lock);
-        } else { //(current->op == op_process)
-            printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
-            //logg(5, "core ", itoc(current->core), " cycle ", itoc(total_cycles-cycles), ": processing");
-            usleep (proc_time);
-        }
-        cycles--;
-    }
+			print_all();
+			pthread_mutex_unlock(&mem_lock);
+		}
+		else if (current->op == op_read) {
+			int location = check_mem(0, current->core, current->chip, current->dir);
+			pthread_mutex_lock(&mem_lock);
+			printf("core %d, cycle %d: reading 0x%d from memory\n", current->core, total_cycles-cycles, current->dir);
+			printf(" └─> data found on level %d\n", location);
+			//logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": reading 0x", itoc(current->dir), " from memory");
+			//logg(2, " └─> data found on level ", itoc(location));
+			mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
+			print_all();
+			pthread_mutex_unlock(&mem_lock);
+		} else { //(current->op == op_process)
+			printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
+			//logg(5, "core ", itoc(current->core), " cycle ", itoc(total_cycles-cycles), ": processing");
+			usleep (proc_time);
+		}
+		cycles--;
+	}
 }
 
 int main () {
-    printf( " =============== POST ===============\n");
-    start_logg();
-    srand(time(0));
+	printf( " =============== POST ===============\n");
+	start_logg();
+	srand(time(0));
 
-    // initialize memory
-    for (int i = 0; i < 16; i++) {
-        memory_t *memblock;
-        memblock = malloc(sizeof(memory_t));
-        memblock->block = 0;
-        memblock->status = Valid;
-        memblock->core = 0;
-        memblock->shared = 0;
-        memblock->dir_data = i;
-        memblock->data = rand()%256;
-        
-        push_back(&MEM, memblock);
-    }
+	// initialize memory
+	for (int i = 0; i < 16; i++) {
+		memory_t *memblock;
+		memblock = malloc(sizeof(memory_t));
+		memblock->block = 0;
+		memblock->status = Valid;
+		memblock->core = 0;
+		memblock->shared = 0;
+		memblock->dir_data = i;
+		memblock->data = rand()%256;
+		
+		push_back(&MEM, memblock);
+	}
 
-    // initialize l2 cache blocks 
-    for (int i = 0; i < 4; i++) {
-        memory_t *l2block;
-        l2block = malloc(sizeof(memory_t));
-        l2block->block = 0;
-        l2block->status = Invalid;
-        l2block->core = 0;
-        l2block->shared = 0;
-        l2block->dir_data = -1;
-        l2block->data = 0;
-        
-        push_back(&L2a, l2block);
-    }
-    for (int i = 0; i < 4; i++) {
-        memory_t *l2block;
-        l2block = malloc(sizeof(memory_t));
-        l2block->block = 0;
-        l2block->status = Invalid;
-        l2block->core = 0;
-        l2block->shared = 0;
-        l2block->dir_data = -1;
-        l2block->data = 0;
-        
-        push_back(&L2b, l2block);
-    }
+	// initialize l2 cache blocks 
+	for (int i = 0; i < 4; i++) {
+		memory_t *l2block;
+		l2block = malloc(sizeof(memory_t));
+		l2block->block = 0;
+		l2block->status = Invalid;
+		l2block->core = 0;
+		l2block->shared = 0;
+		l2block->dir_data = -1;
+		l2block->data = 0;
+		
+		push_back(&L2a, l2block);
+	}
+	for (int i = 0; i < 4; i++) {
+		memory_t *l2block;
+		l2block = malloc(sizeof(memory_t));
+		l2block->block = 0;
+		l2block->status = Invalid;
+		l2block->core = 0;
+		l2block->shared = 0;
+		l2block->dir_data = -1;
+		l2block->data = 0;
+		
+		push_back(&L2b, l2block);
+	}
 
-    // initialize l1 cache blocks 
-    for (int i = 0; i < 2; i++) {
-        memory_t *l1block;
-        l1block = malloc(sizeof(memory_t));
-        l1block->block = 0;
-        l1block->status = Invalid;
-        l1block->core = 0;
-        l1block->dir_data = -1;
-        l1block->data = 0;
-        
-        push_back(&L1a, l1block);
-    }
-    for (int i = 0; i < 2; i++) {
-        memory_t *l1block;
-        l1block = malloc(sizeof(memory_t));
-        l1block->block = 1;
-        l1block->status = Invalid;
-        l1block->core = 1;
-        l1block->shared = 0;
-        l1block->dir_data = -1;
-        l1block->data = 0;
-        
-        push_back(&L1b, l1block);
-    } 
-    for (int i = 0; i < 2; i++) {
-        memory_t *l1block;
-        l1block = malloc(sizeof(memory_t));
-        l1block->block = 2;
-        l1block->status = Invalid;
-        l1block->core = 2;
-        l1block->shared = 0;
-        l1block->dir_data = -1;
-        l1block->data = 0;
-        
-        push_back(&L1c, l1block);
-    }
-    for (int i = 0; i < 2; i++) {
-        memory_t *l1block;
-        l1block = malloc(sizeof(memory_t));
-        l1block->block = 3;
-        l1block->status = Invalid;
-        l1block->core = 3;
-        l1block->shared = 0;
-        l1block->dir_data = -1;
-        l1block->data = 0;
-        
-        push_back(&L1d, l1block);
-    }
+	// initialize l1 cache blocks 
+	for (int i = 0; i < 2; i++) {
+		memory_t *l1block;
+		l1block = malloc(sizeof(memory_t));
+		l1block->block = 0;
+		l1block->status = Invalid;
+		l1block->core = 0;
+		l1block->dir_data = -1;
+		l1block->data = 0;
+		
+		push_back(&L1a, l1block);
+	}
+	for (int i = 0; i < 2; i++) {
+		memory_t *l1block;
+		l1block = malloc(sizeof(memory_t));
+		l1block->block = 1;
+		l1block->status = Invalid;
+		l1block->core = 1;
+		l1block->shared = 0;
+		l1block->dir_data = -1;
+		l1block->data = 0;
+		
+		push_back(&L1b, l1block);
+	} 
+	for (int i = 0; i < 2; i++) {
+		memory_t *l1block;
+		l1block = malloc(sizeof(memory_t));
+		l1block->block = 2;
+		l1block->status = Invalid;
+		l1block->core = 2;
+		l1block->shared = 0;
+		l1block->dir_data = -1;
+		l1block->data = 0;
+		
+		push_back(&L1c, l1block);
+	}
+	for (int i = 0; i < 2; i++) {
+		memory_t *l1block;
+		l1block = malloc(sizeof(memory_t));
+		l1block->block = 3;
+		l1block->status = Invalid;
+		l1block->core = 3;
+		l1block->shared = 0;
+		l1block->dir_data = -1;
+		l1block->data = 0;
+		
+		push_back(&L1d, l1block);
+	}
 
-    // Initialize processor parameters
-    processor_params *proc0;
-    proc0 = malloc(sizeof(processor_params));
-    proc0->id = 0;
-    proc0->chip = 0;
+	// Initialize processor parameters
+	processor_params *proc0;
+	proc0 = malloc(sizeof(processor_params));
+	proc0->id = 0;
+	proc0->chip = 0;
 
-    processor_params *proc1;
-    proc1 = malloc(sizeof(processor_params));
-    proc1->id = 1;
-    proc1->chip = 0;
+	processor_params *proc1;
+	proc1 = malloc(sizeof(processor_params));
+	proc1->id = 1;
+	proc1->chip = 0;
 
-    processor_params *proc2;
-    proc2 = malloc(sizeof(processor_params));
-    proc2->id = 2;
-    proc2->chip = 1;
+	processor_params *proc2;
+	proc2 = malloc(sizeof(processor_params));
+	proc2->id = 2;
+	proc2->chip = 1;
 
-    processor_params *proc3;
-    proc3 = malloc(sizeof(processor_params));
-    proc3->id = 3;
-    proc3->chip = 1;
-    
-    print_mem(MEM, 2);
-    print_all();
+	processor_params *proc3;
+	proc3 = malloc(sizeof(processor_params));
+	proc3->id = 3;
+	proc3->chip = 1;
+	
+	print_mem(MEM, 2);
+	print_all();
 
-    printf(" =============== Starting simulation =============== \n \n");
-    logg(1, " =============== Starting simulation =============== ");
+	printf(" =============== Starting simulation =============== \n \n");
+	logg(1, " =============== Starting simulation =============== ");
 
-    int ret0 = pthread_create (&cpu0, NULL, processor, proc0);
-    if(ret0) { printf("Error creating core 0: = %d\n", ret0); }
-        
-    int ret1 = pthread_create (&cpu1, NULL, processor, proc1);
-    if(ret1) { printf("Error creating core 1: = %d\n", ret1); }
+	int ret0 = pthread_create (&cpu0, NULL, processor, proc0);
+	if(ret0) { printf("Error creating core 0: = %d\n", ret0); }
+		
+	int ret1 = pthread_create (&cpu1, NULL, processor, proc1);
+	if(ret1) { printf("Error creating core 1: = %d\n", ret1); }
 
-    int ret2 = pthread_create (&cpu2, NULL, processor, proc2);
-    if(ret2) { printf("Error creating core 2: = %d\n", ret2); }
+	int ret2 = pthread_create (&cpu2, NULL, processor, proc2);
+	if(ret2) { printf("Error creating core 2: = %d\n", ret2); }
 
-    int ret3 = pthread_create (&cpu3, NULL, processor, proc3);
-    if(ret3) { printf("Error creating core 3: = %d\n", ret3); }
+	int ret3 = pthread_create (&cpu3, NULL, processor, proc3);
+	if(ret3) { printf("Error creating core 3: = %d\n", ret3); }
 
-    pthread_join(cpu0, NULL);
-    pthread_join(cpu1, NULL);
-    pthread_join(cpu2, NULL);
-    pthread_join(cpu3, NULL);
+	pthread_join(cpu0, NULL);
+	pthread_join(cpu1, NULL);
+	pthread_join(cpu2, NULL);
+	pthread_join(cpu3, NULL);
 
-    printf("  +++ Final memory status +++  \n");
-    print_mem(MEM, 2);
-    print_all();
+	printf("  +++ Final memory status +++  \n");
+	print_mem(MEM, 2);
+	print_all();
 
-    return 0;
+	return 0;
 }
 
