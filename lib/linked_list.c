@@ -58,7 +58,11 @@ void print_mem(Node_t *head, int level) {
 		// Print L2 cache attributes (all)
 		for (int i = 0; i<len; i++){
 			current = get_at(head, i);
-			printf("0x0%d [", i);
+			if (i<10) {
+				printf("0x0%d [", i);
+			} else {
+				printf("0x%d [", i);
+			}
 			printf(" %d |", current->block);
 			printf(" %d |", current->status);
 			printf(" %d |", current->core);

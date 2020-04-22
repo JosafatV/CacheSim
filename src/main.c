@@ -11,6 +11,7 @@
 #define op_read 1
 #define op_write 2
 #define proc_time 10000
+#define dir_penalty 20000
 #define l1_penalty 20000
 #define l2_penalty 50000
 #define mem_penalty 100000
@@ -56,8 +57,8 @@ pthread_t mem;
 pthread_mutex_t mem_lock;
 
 void print_all(){
-    //print_mem(MEM, 2);
-    printf("DIR:\n"); print_mem(DIR, 2);
+    //printf("MEM:\n"); print_mem(MEM, 2);
+    //printf("DIR:\n"); print_mem(DIR, 1);
     printf("L2a:\n"); print_mem(L2a, 1);
     printf("L2b:\n"); print_mem(L2b, 1);
     printf("L1a:\n"); print_mem(L1a, 0);
@@ -67,7 +68,7 @@ void print_all(){
     printf("\n");
 }
 
-/**  finds a data object in memory, simulates memory access penalty
+/**  finds a data object in memory, memory access penalty changes to directory access mem
  * \param level the level of memory is being accessed: 0==L1, 1==L2 & 2==MEM
  * \param cpu which processor is doing the search (especifies which L1 cache to search)
  * \param chip which processor is doing the search (especifies which L2 cache to search)
@@ -75,12 +76,19 @@ void print_all(){
  * \return At what level was the data found
  */ 
 int check_mem(int level, int cpu, int chip, int addr) {
+    int addr2 = addr%2;
+    int addr4 = addr%4;    
+    usleep(dir_penalty);
+    
     if (level == 0) { // check L1
-        usleep(l1_penalty);
-        switch (cpu) {
         memory_t * searched_data;
+		int l1a_addr = 8+addr2;
+		int l1b_addr = 10+addr2;
+		int l1c_addr = 12+addr2;
+		int l1d_addr = 14+addr2;
+        switch (cpu) {
         case 0:
-            searched_data = get_at(L1a, addr%2);
+            searched_data = get_at(DIR, l1a_addr);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
                 return check_mem(level+1, cpu, chip, addr);
             } else {
@@ -88,7 +96,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
             } 
             break;
         case 1:
-            searched_data = get_at(L1b, addr%2);
+            searched_data = get_at(DIR, l1b_addr);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
                 return check_mem(level+1, cpu, chip, addr);
             } else {
@@ -96,7 +104,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
             } 
             break;
         case 2:
-            searched_data = get_at(L1c, addr%2);
+            searched_data = get_at(DIR, l1c_addr);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
                 return check_mem(level+1, cpu, chip, addr);
             } else {
@@ -104,7 +112,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
             } 
             break;
         case 3:
-            searched_data = get_at(L1d, addr%2);
+            searched_data = get_at(DIR, l1d_addr);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
                 return check_mem(level+1, cpu, chip, addr);
             } else {
@@ -116,31 +124,31 @@ int check_mem(int level, int cpu, int chip, int addr) {
             break;
         }
     } else if (level == 1) { // check L2
-        usleep(l2_penalty);
+		int l2a_addr = addr4;
+		int l2b_addr = 4+addr4;
         if (chip == 0) {
-            memory_t * searched_data = get_at(L2a, addr%4);
+            memory_t * searched_data = get_at(DIR, l2a_addr);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) { // data is invalid or its not it
-                return check_mem(level+1, cpu, chip, addr%4);
+                return check_mem(level+1, cpu, chip, addr);
             } else {
                 return level;
             }
         } else {
-            memory_t * searched_data = get_at(L2b, addr%4);
+            memory_t * searched_data = get_at(DIR, l2b_addr);
             if (searched_data->status == Invalid) {
-                return check_mem(level+1, cpu, chip, addr%4);
+                return check_mem(level+1, cpu, chip, addr);
             } else {
                 return level;
             }
         }
     } else { // check MEM
-        usleep(mem_penalty);
         return level;
     }
 }
 
 
 /** Updates the status in the directory after a write op has been made.
- * MEM 00-15 | L2a 16-19 | L2b 20-23 | L1a 24-25 | L1b 26-27 | L1c 28-29 | L1d 30-31
+ * L2a 0-3 | L2b 4-7 | L1a 8-9 | L1b 10-11 | L1c 12-13 | L1d 14-15
  * \param cpu the cpu that is writting the data
  * \param chip the chip that is writting the data
  * \param addr the address that is being modified
@@ -148,120 +156,159 @@ int check_mem(int level, int cpu, int chip, int addr) {
 int update_dir (int cpu, int chip, int addr) {
     int addr2 = addr%2;
     int addr4 = addr%4;
-    int l2a_addr = 16+addr4;
-    int l2b_addr = 20+addr4;
-    int l1a_addr = 24+addr2;
-    int l1b_addr = 26+addr2;
-    int l1c_addr = 28+addr2;
-    int l1d_addr = 30+addr2;
+    int l2a_addr = addr4;
+    int l2b_addr = 4+addr4;
+    int l1a_addr = 8+addr2;
+    int l1b_addr = 10+addr2;
+    int l1c_addr = 12+addr2;
+    int l1d_addr = 14+addr2;
 
-    // If L2a is updated (cpu_0 or cpu_1 write) and the data is in L2b, update status in L2b
-    if (chip == 0 && get_at(DIR, l2b_addr)->dir_data == addr) {
-        memory_t *new_l2 = get_at(DIR, l2b_addr);
-        new_l2->status = 0;
-        set_at(DIR, l2b_addr, new_l2);
-    } else if ( chip == 1 && get_at(DIR, l2a_addr)->dir_data == addr) {
+    usleep(dir_penalty); // get_at check
+
+    // If L2b is updated (cpu_0 or cpu_1 write) and the data is in L2b, update status of L2b in Dir
+   if (chip==1 && get_at(DIR, l2a_addr)->dir_data == addr) {
         memory_t *new_l2 = get_at(DIR, l2a_addr);
-        new_l2->status = 0;
+        new_l2->status = Invalid;
         set_at(DIR, l2a_addr, new_l2);
+		printf("Dir: chip %d updated l2a\n", chip);
+		usleep(l2_penalty);
+    } else if (chip==0 && get_at(DIR, l2b_addr)->dir_data == addr) {
+        memory_t *new_l2 = get_at(DIR, l2b_addr);
+        new_l2->status = Invalid;
+        set_at(DIR, l2b_addr, new_l2);
+		printf("Dir: chip %d updated l2b \n", chip);
+		usleep(l2_penalty);
     }
 
-    // Update the other L1 cache blocks if the data is in them
-    if (cpu!=0, get_at(DIR, l1a_addr)->dir_data == addr) {
+    // Update the other L1 cache blocks reference if the data is in them
+    if (cpu!=0 && get_at(DIR, l1a_addr)->dir_data == addr) {
         memory_t *new_l1 = get_at(DIR, l1a_addr);
-        new_l1->status = 0;
+        new_l1->status = Invalid;
         set_at(DIR, l1a_addr, new_l1);
-        //set_at(L1a, addr%2, new_l1); // Update MEM
+		printf("Dir: cpu %d updated l1a \n", cpu);
+		usleep(l1_penalty);
     }
-    if (cpu!=1, get_at(DIR, l1b_addr)->dir_data == addr) {
+    if (cpu!=1 && get_at(DIR, l1b_addr)->dir_data == addr) {
         memory_t *new_l1 = get_at(DIR, l1b_addr);
-        new_l1->status = 0;
+        new_l1->status = Invalid;
         set_at(DIR, l1b_addr, new_l1);
-        //set_at(L1b, addr%2, new_l1); // Update MEM
+		printf("Dir: cpu %d updated l1b \n", cpu);
+		usleep(l1_penalty);
     }    
-    if (cpu!=2, get_at(DIR, l1c_addr)->dir_data == addr) {
+    if (cpu!=2 && get_at(DIR, l1c_addr)->dir_data == addr) {
         memory_t *new_l1 = get_at(DIR, l1c_addr);
-        new_l1->status = 0;
+        new_l1->status = Invalid;
         set_at(DIR, l1c_addr, new_l1);
-        //set_at(L1c, addr%2, new_l1); // Update MEM
+		printf("Dir: cpu %d updated l1c \n", cpu);
+		usleep(l1_penalty);
     }
-    if (cpu!=3, get_at(DIR, l1d_addr)->dir_data == addr) {
+    if (cpu!=3 && get_at(DIR, l1d_addr)->dir_data == addr) {
         memory_t *new_l1 = get_at(DIR, l1d_addr);
-        new_l1->status = 0;
+        new_l1->status = Invalid;
         set_at(DIR, l1d_addr, new_l1);
-        //set_at(L1d, addr%2, new_l1); // Update MEM
+		printf("Dir: cpu %d updated l1d \n", cpu);
+		usleep(l1_penalty);
     }
         
 }
 
-/** After a MISS, updates the data on upper levels of memory to contain the searched-for data. Access penalties are in check_mem
+/** After a MISS, updates the data on upper levels of memory and dir to contain the searched-for data. Access penalties are considered
  * \param level in which level the data was found
  * \param cpu which cpu core is looking for the data
  * \param chip which chip is requesting data from memory
  * \param addr which data is being looked for
   */
 void mmu_read (int level, int cpu, int chip, int addr) {
+	int addr2 = addr%2;
+	int addr4 = addr%4;
+	int l2a_addr = addr4;
+	int l2b_addr = 4+addr4;
+	int l1a_addr = 8+addr2;
+	int l1b_addr = 10+addr2;
+	int l1c_addr = 12+addr2;
+	int l1d_addr = 14+addr2;
+	
     if (level == 1) {
         // Data is in L2. Read and elevate to L1
+        usleep(l2_penalty);
         memory_t *data_l2;
         data_l2 = (memory_t*) malloc(sizeof(memory_t));
         
         if (chip == 0) {
-			data_l2 = get_at(L2a, addr%4);
+			data_l2 = get_at(L2a, addr4);
         } else {
-            data_l2 = get_at(L2b, addr%4);
+            data_l2 = get_at(L2b, addr4);
         }
+
+		usleep(l1_penalty);
+		usleep(dir_penalty);
 
         switch (cpu) {
             case 0:
-                set_at(L1a, addr%2, data_l2);
+                set_at(L1a, addr2, data_l2);
+				set_at(DIR, l1a_addr, data_l2);
                 break;
             case 1:
-                set_at(L1b, addr%2, data_l2);
+                set_at(L1b, addr2, data_l2);
+				set_at(DIR, l1b_addr, data_l2);
                 break;
             case 2:
-                set_at(L1c, addr%2, data_l2);
+                set_at(L1c, addr2, data_l2);
+				set_at(DIR, l1c_addr, data_l2);
                 break;
             case 3:
-                set_at(L1d, addr%2, data_l2);
+                set_at(L1d, addr2, data_l2);
+				set_at(DIR, l1d_addr, data_l2);
                 break;
             default:
                 break;
         }
     } else if (level == 2) {
         // Data is in MEM. Read and elevate to L2 and L1
+        usleep(mem_penalty);
         memory_t *data_mem;
         data_mem = (memory_t*) malloc(sizeof(memory_t));
 	    data_mem = get_at(MEM, addr);
 
+		usleep(l2_penalty);
+		usleep(dir_penalty);
         if (chip == 0) {
-			set_at(L2a, addr%4, data_mem);
+			set_at(L2a, addr4, data_mem);
+			set_at(DIR, l2a_addr, data_mem);
         } else {
-            set_at(L2b, addr%4, data_mem);
+            set_at(L2b, addr4, data_mem);
+			set_at(DIR, l2b_addr, data_mem);
         }
+		usleep(l1_penalty);
+		usleep(dir_penalty);
 
         switch (cpu) {
             case 0:
-                set_at(L1a, addr%2, data_mem);
+                set_at(L1a, addr2, data_mem);
+				set_at(DIR, l1a_addr, data_mem);
                 break;
             case 1:
-                set_at(L1b, addr%2, data_mem);
+                set_at(L1b, addr2, data_mem);
+				set_at(DIR, l1b_addr, data_mem);
                 break;
             case 2:
-                set_at(L1c, addr%2, data_mem);
+                set_at(L1c, addr2, data_mem);
+				set_at(DIR, l1c_addr, data_mem);
                 break;
             case 3:
-                set_at(L1d, addr%2, data_mem);
+                set_at(L1d, addr2, data_mem);
+				set_at(DIR, l1d_addr, data_mem);
                 break;
             default:
                 break;
         }
 	} else {
-		; // if (level == 0) Data is in L1. No action needed
+        // if (level == 0) Data is in L1. No action needed
+        usleep(l1_penalty);
 	}
 }
 
-/** The CPU sends a write order, the data is written following the write-through protocol
+/** The CPU sends a write order, the data is written following the write-through protocol and the directory is updated
  * \param cpu which cpu core is writting the data
  * \param chip to what chip does the core belong
  * \param addr the address that is being written
@@ -275,56 +322,72 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	new_data->core = cpu;
 	new_data->shared = 0;		// Update
 	new_data->dir_data = addr;
-	new_data->data = data;    
+	new_data->data = data;
 
+	usleep(dir_penalty);
+	int addr2 = addr%2;
+	int addr4 = addr%4;
+	int l2a_addr = addr4;
+	int l2b_addr = 4+addr4;
+	int l1a_addr = 8+addr2;
+	int l1b_addr = 10+addr2;
+	int l1c_addr = 12+addr2;
+	int l1d_addr = 14+addr2;
+
+	// Update L1 (Write-back)
 	usleep(l1_penalty);
 	switch (cpu) {
 	case 0:
-		set_at(L1a, addr%2, new_data);
+		set_at(L1a, addr2, new_data);
+		set_at(DIR, l1a_addr, new_data);
 		break;
 	case 1:
-		set_at(L1b, addr%2, new_data);
+		set_at(L1b, addr2, new_data);
+		set_at(DIR, l1b_addr, new_data);
 		break;
 	case 2:
-		set_at(L1c, addr%2, new_data);
+		set_at(L1c, addr2, new_data);
+		set_at(DIR, l1c_addr, new_data);
 		break;
 	case 3:
-		set_at(L1d, addr%2, new_data);
+		set_at(L1d, addr2, new_data);
+		set_at(DIR, l1d_addr, new_data);
 		break;
 	default:
-		printf("Unexped error");
+		printf("Unexped error: too many cores");
 		break;
 	}
 
 	// Send to BUS (Write-through L2)
-    
 	usleep(l2_penalty);
 	if (chip == 0) {
-		set_at(L2a, addr%4, new_data);
-        update_dir(cpu, chip, addr);
+		set_at(L2a, addr4, new_data);
+		set_at(DIR, l2a_addr, new_data);
 	} else {
-		set_at(L2b, addr%4, new_data);
-		update_dir(cpu, chip, addr);
+		set_at(L2b, addr4, new_data);
+		set_at(DIR, l2b_addr, new_data);		
 	}
 
 	// Send to BUS (Write-through MEM)
 	usleep(mem_penalty);
 	set_at(MEM, addr, new_data);
-    //pthread_mutex_unlock(&mem_lock);
+
+	// Update status of other memory in directory
+	update_dir(cpu, chip, addr);   
 }
 
 void* processor (void* params) {
-    processor_params *p = (processor_params*) params;
-    int n_core = p->id;
-    int n_chip = p->chip;
+	processor_params *p = (processor_params*) params;
+	int n_core = p->id;
+	int n_chip = p->chip;
 
-   instr_t* current;
-   current = malloc(sizeof(instr_t));
-    int total_cycles = 5;
-    int cycles = total_cycles;
-    printf("+++ Starting core %d +++\n \n", n_core);
-    logg(3, "+++ Starting core", itoc(n_core)," +++");
-    while (cycles){
+	instr_t* current;
+	current = malloc(sizeof(instr_t));
+	int total_cycles = 10;
+	int cycles = total_cycles;
+	printf("+++ Starting core %d +++\n \n", n_core);
+	logg(3,"+++ Starting core", itoc(n_core)," +++");
+	while (cycles){
         // create instruction
         current->core = n_core;
         current->chip = n_chip;
@@ -334,9 +397,9 @@ void* processor (void* params) {
 
         if (current->op == op_write) {     
             pthread_mutex_lock(&mem_lock);
-            printf( "core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
+            printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
 			printf(" └─> data written to 0x%d\n", current->dir);
-			mmu_write (current->core, current->chip, current->dir, current->data);
+			mmu_write(current->core, current->chip, current->dir, current->data);
             print_all();
             pthread_mutex_unlock(&mem_lock);
         }
@@ -376,15 +439,15 @@ int main () {
     }
 
         // initialize directory
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 16; i++) {
         memory_t *memblock;
         memblock = malloc(sizeof(memory_t));
         memblock->block = 0;
-        memblock->status = Valid;
+        memblock->status = Invalid;
         memblock->core = 0;
         memblock->shared = 0;
-        memblock->dir_data = i;
-        memblock->data = rand()%256;
+        memblock->dir_data = -1;
+        memblock->data = -1;
         
         push_back(&DIR, memblock);
     }
@@ -468,7 +531,7 @@ int main () {
     processor_params *proc0;
     proc0 = malloc(sizeof(processor_params));
     proc0->id = 0;
-    proc0->chip = 1;
+    proc0->chip = 0;
 
     processor_params *proc1;
     proc1 = malloc(sizeof(processor_params));
@@ -478,7 +541,7 @@ int main () {
     processor_params *proc2;
     proc2 = malloc(sizeof(processor_params));
     proc2->id = 2;
-    proc2->chip = 0;
+    proc2->chip = 1;
 
     processor_params *proc3;
     proc3 = malloc(sizeof(processor_params));
@@ -488,7 +551,7 @@ int main () {
     print_all();
 
     printf(" =============== Starting simulation =============== \n \n");
-    logg(1, " =============== Starting simulation =============== ");
+    logg(1," =============== Starting simulation =============== ");
 
     int ret0 = pthread_create (&cpu0, NULL, processor, proc0);
     if(ret0) { printf("Error creating core 0: = %d\n", ret0); }
@@ -507,7 +570,9 @@ int main () {
     pthread_join(cpu2, NULL);
     pthread_join(cpu3, NULL);
 
-    printf("  +++ Final memory status +++  \n");
+    printf(" +++ Final memory status +++  \n");
+	printf("DIR:\n"); print_mem(DIR, 2);
+	printf("MEM:\n"); print_mem(MEM, 2);
     print_all();
 
     return 0;
