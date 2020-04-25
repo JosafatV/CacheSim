@@ -5,6 +5,26 @@
 
 #include "../include/linked_list.h"
 
+void print_status(int status) {
+	switch (status) {
+	case 0:
+		printf(" I |");
+		break;
+	case 1:
+		printf(" S |");
+		break;
+	case 2:
+		printf(" M |");
+		break;	
+	case 3:
+		printf(" V |");
+		break; 
+	default:
+		printf ("? |");
+	break;
+	}
+}
+
 void print_list(Node_t *head, int property) {
   Node_t *current = head;
   printf("[");
@@ -22,6 +42,7 @@ void print_list(Node_t *head, int property) {
   printf("]\n");
 }
 
+
 /** Prints the memory block of the according level
  * \param head the linked_list to print
  * \param level the memory level to print. Use 1 for all attributes
@@ -36,7 +57,7 @@ void print_mem(Node_t *head, int level) {
 			current = get_at(head, i);
 			printf("0x0%d [", i);
 			printf(" %d |", current->block);
-			printf(" %d |", current->status);
+      		print_status(current->status);
 			printf(" 0x%d |", current->dir_data);
 			printf(" %d ]\n", current->data);
 		}
@@ -49,7 +70,7 @@ void print_mem(Node_t *head, int level) {
 			} else {
 				printf("0x%d [", i);
 			}
-			printf(" %d |", current->status);
+      		print_status(current->status);
 			printf(" %d |", current->core);
 			//printf(" 0x%d |", current->dir_data);
 			printf(" %d ]\n", current->data);
@@ -60,7 +81,7 @@ void print_mem(Node_t *head, int level) {
 			current = get_at(head, i);
 			printf("0x0%d [", i);
 			printf(" %d |", current->block);
-			printf(" %d |", current->status);
+      		print_status(current->status);
 			printf(" %d |", current->core);
 			printf(" %d |", current->shared);
 			printf(" 0x%d |", current->dir_data);
@@ -76,7 +97,7 @@ void print_l2(Node_t *head, int property) {
     if(property == 0)
       printf("%d ", current->value->block);
     else if(property == 1)
-      printf("%d ", current->value->status);
+		printf("%d ", current->value->status);
     else if(property == 2)
       printf("%d ", current->value->core);
     else if(property == 3)
