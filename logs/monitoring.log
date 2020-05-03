@@ -1,0 +1,79 @@
+Logg started: Sun May  3 10:50:40 2020
+ =============== Starting simulation =============== 
++++ Starting core 0 +++
++++ Starting core 1 +++
++++ Starting core 2 +++
++++ Starting core 3 +++
+core 2, cycle 0: writting 235 to memory
+ └─> data written to 0x2
+core 2, cycle 1: processing
+core 3, cycle 0: writting 519 to memory
+ └─> data written to 0x2
++++ IM updated status of 0x2 in L1c +++
+core 0, cycle 0: reading 0x8 from memory
+ └─> data found on level 2
+core 0, cycle 1: processing
+core 1, cycle 0: reading 0x10 from memory
+ └─> data found on level 2
+core 1, cycle 1: writting 880 to memory
+ └─> data written to 0x11
+core 2, cycle 2: reading 0x4 from memory
+ └─> data found on level 2
+core 3, cycle 1: reading 0x5 from memory
+ └─> data found on level 2
+core 3, cycle 2: processing
+core 0, cycle 2: reading 0x2 from memory
+ └─> data found on level 2
+core 0, cycle 3: processing
+core 3, cycle 3: processing
+core 0, cycle 4: writting 579 to memory
+ └─> data written to 0x15
+core 3, cycle 4: processing
+core 3, cycle 5: processing
+core 0, cycle 5: processing
+core 1, cycle 2: reading 0x10 from memory
+ └─> data found on level 0
+core 1, cycle 3: processing
+core 3, cycle 6: writting 6 to memory
+ └─> data written to 0x1
+core 1, cycle 4: processing
+core 3, cycle 7: writting 908 to memory
+ └─> data written to 0x9
+core 3, cycle 8: writting 811 to memory
+ └─> data written to 0x4
++++ IM updated status of 0x4 in L1c +++
+core 3, cycle 9: writting 977 to memory
+ └─> data written to 0x12
+core 2, cycle 3: reading 0x0 from memory
+ └─> data found on level 1
+core 2, cycle 4: writting 171 to memory
+ └─> data written to 0x6
+core 2, cycle 5: writting 300 to memory
+ └─> data written to 0x12
++++ IM updated status of 0x12 in L1d +++
+core 2, cycle 6: writting 525 to memory
+ └─> data written to 0x2
++++ IM updated status of 0x2 in L2a +++
++++ IM updated status of 0x2 in L1a +++
+core 2, cycle 7: writting 156 to memory
+ └─> data written to 0x4
+core 2, cycle 8: writting 828 to memory
+ └─> data written to 0x9
++++ IM updated status of 0x9 in L1d +++
+core 2, cycle 9: processing
+core 1, cycle 5: writting 20 to memory
+ └─> data written to 0x8
+core 1, cycle 6: processing
+core 0, cycle 6: writting 210 to memory
+ └─> data written to 0x0
+core 0, cycle 7: processing
+core 1, cycle 7: writting 603 to memory
+ └─> data written to 0x4
++++ IM updated status of 0x4 in L2b +++
++++ IM updated status of 0x4 in L1c +++
+core 0, cycle 8: writting 796 to memory
+ └─> data written to 0x0
+core 0, cycle 9: processing
+core 1, cycle 8: reading 0x1 from memory
+ └─> data found on level 2
+core 1, cycle 9: processing
