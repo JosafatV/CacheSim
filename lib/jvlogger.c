@@ -44,6 +44,7 @@ char read_char (char* read_path) {
  */
 void start_logg () {
 	FILE *fp;
+	system("[ -d logs ] || mkdir logs"); // creates folder for loggs if it doesn't exist
 	fp = fopen(write_path, "w");
 
 	if (fp == NULL) {
