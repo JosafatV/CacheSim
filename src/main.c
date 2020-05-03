@@ -395,7 +395,7 @@ void* processor (void* params) {
 	int total_cycles = 10;
 	int cycles = total_cycles;
 	printf("+++ Starting core %d +++\n \n", n_core);
-	logg(3,"+++ Starting core", itoc(n_core)," +++");
+	logg(3,"+++ Starting core ", itoc(n_core)," +++");
 	while (cycles){
         // create instruction
         current->core = n_core;
@@ -405,28 +405,31 @@ void* processor (void* params) {
         current->data = (rand() % 1024);
 
         if (current->op == op_write) {     
+			char buffer[128];
             pthread_mutex_lock(&mem_lock);
-			printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
+			sprintf(buffer, "core %d, cycle %d: writting %d to memory", current->core, total_cycles-cycles, current->data);
+			printf("%s\n", buffer); logg(1, buffer);
 			printf(" └─> data written to 0x%d\n", current->dir);
-			logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": writting ", itoc(current->data), " to memory");
-			logg(2, " └─> data written to 0x", itoc(current->dir));
+			logg(2," └─> data written to 0x", itoc(current->dir));
 			mmu_write(current->core, current->chip, current->dir, current->data);
             print_all();
             pthread_mutex_unlock(&mem_lock);
         }
         else if (current->op == op_read) {
             int location = check_mem(0, current->core, current->chip, current->dir);
+			char buffer[128];
             pthread_mutex_lock(&mem_lock);
-            printf("core %d, cycle %d: reading 0x%d from memory\n", current->core, total_cycles-cycles, current->dir);
+	        sprintf(buffer, "core %d, cycle %d: reading 0x%d from memory", current->core, total_cycles-cycles, current->dir);
+			printf("%s\n", buffer); logg(1, buffer);
             printf(" └─> data found on level %d\n", location);
-			logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": reading 0x", itoc(current->dir), " from memory");
-			logg(2, " └─> data found on level ", itoc(location));
+			logg(2," └─> data found on level ", itoc(location));
             mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
             print_all();
             pthread_mutex_unlock(&mem_lock);
         } else { //(current->op == op_process)
-            printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
-			logg(5, "core ", itoc(current->core), " cycle ", itoc(total_cycles-cycles), ": processing");
+		char buffer[128];
+            sprintf(buffer, "core %d, cycle %d: processing", current->core, total_cycles-cycles);
+			printf("%s\n", buffer); logg(1, buffer);
             usleep (proc_time);
         }
         cycles--;
