@@ -219,7 +219,7 @@ int update_dir (int cpu, int chip, int addr) {
 }
 
 /** After a MISS, updates the data on upper levels of memory and dir to contain the searched-for data. Access penalties are considered
- * \param level in which level the data was found
+ * \param level in which level the valid data was found
  * \param cpu which cpu core is looking for the data
  * \param chip which chip is requesting data from memory
  * \param addr which data is being looked for
@@ -242,10 +242,12 @@ void mmu_read (int level, int cpu, int chip, int addr) {
         
         if (chip == 0) {
 			data_l2 = get_at(L2a, addr4);
-			data_l2->status = Shared;
+			data_l2->status = Valid;
+			data_l2->shared = Shared;
         } else {
             data_l2 = get_at(L2b, addr4);
-			data_l2->status = Shared;
+			data_l2->status = Valid;
+			data_l2->shared = Shared;
         }
 
 		usleep(l1_penalty);
@@ -277,7 +279,8 @@ void mmu_read (int level, int cpu, int chip, int addr) {
         memory_t *data_mem;
         data_mem = (memory_t*) malloc(sizeof(memory_t));
 	    data_mem = get_at(MEM, addr);
-		data_mem->status = Shared;
+		data_mem->status = Valid;
+		data_mem->shared = Shared;
 
 		usleep(l2_penalty);
 		usleep(dir_penalty);
@@ -326,10 +329,10 @@ void mmu_read (int level, int cpu, int chip, int addr) {
 void mmu_write (int cpu, int chip, int addr, int data){
 	memory_t * new_data;
 	new_data = (memory_t *) malloc(sizeof(memory_t));
-	new_data->block = 0;		// Confirm
-	new_data->status = Modified;
+	new_data->block = chip;		// Confirm
+	new_data->status = Valid;
 	new_data->core = cpu;
-	new_data->shared = 0;		// Update
+	new_data->shared = Modified;
 	new_data->dir_data = addr;
 	new_data->data = data;
 
@@ -448,7 +451,7 @@ int main () {
         memblock->block = 0;
         memblock->status = Valid;
         memblock->core = 0;
-        memblock->shared = 0;
+        memblock->shared = Modified;
         memblock->dir_data = i;
         memblock->data = rand()%256;
         
@@ -462,7 +465,7 @@ int main () {
         memblock->block = 0;
         memblock->status = Invalid;
         memblock->core = 0;
-        memblock->shared = 0;
+        memblock->shared = Modified;
         memblock->dir_data = -1;
         memblock->data = -1;
         
@@ -476,7 +479,7 @@ int main () {
         l2block->block = 0;
         l2block->status = Invalid;
         l2block->core = 0;
-        l2block->shared = 0;
+        l2block->shared = Modified;
         l2block->dir_data = -1;
         l2block->data = 0;
         
@@ -488,7 +491,7 @@ int main () {
         l2block->block = 0;
         l2block->status = Invalid;
         l2block->core = 0;
-        l2block->shared = 0;
+        l2block->shared = Modified;
         l2block->dir_data = -1;
         l2block->data = 0;
         
@@ -502,6 +505,7 @@ int main () {
         l1block->block = 0;
         l1block->status = Invalid;
         l1block->core = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -510,10 +514,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 1;
+        l1block->block = 0;
         l1block->status = Invalid;
         l1block->core = 1;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -522,10 +526,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 2;
+        l1block->block = 1;
         l1block->status = Invalid;
         l1block->core = 2;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -534,10 +538,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 3;
+        l1block->block = 1;
         l1block->status = Invalid;
         l1block->core = 3;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
