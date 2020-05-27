@@ -456,6 +456,10 @@ int select_instr (int i, int n) {
     
 }
 
+/** Each processor is treated as it's own thread. It will create and "processs" instructions that the bus will manage
+ * in order to mantiain cache coeherency
+ * \param params is a processor_params struct casted to void* for use in pthread. Contains info for the specific core
+ */
 void* processor (void* params) {
 	processor_params *p = (processor_params*) params;
 	int n_core = p->id;
