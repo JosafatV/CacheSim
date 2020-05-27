@@ -44,6 +44,7 @@ char read_char (char* read_path) {
  */
 void start_logg () {
 	FILE *fp;
+	system("[ -d logs ] || mkdir logs"); // creates folder for loggs if it doesn't exist
 	fp = fopen(write_path, "w");
 
 	if (fp == NULL) {
@@ -65,6 +66,7 @@ void start_logg () {
 
 /** logs a set of data into a known file by appending it. Finishes the log with a newline.
  * Create the file with "start_logg"
+ * TODO: not distinguishing between variables: for now it can only manage 1. Use sprintf (buffer, "msg", params) and logg(1, buffer)
  * \param num the amount of data arguments passed to the function
  * \param char the data to be logged into the file
  */
@@ -82,7 +84,7 @@ void logg (int num, ...) {
 	va_start(arglist, num);
 	for (int i=0; i<num; i++) {
 		fprintf(fp, "%s", va_arg(arglist, char*));
-	}	
+	}
 	fprintf(fp, "%s", newline);
 
 	va_end(arglist);

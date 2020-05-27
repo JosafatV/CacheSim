@@ -219,7 +219,7 @@ int update_dir (int cpu, int chip, int addr) {
 }
 
 /** After a MISS, updates the data on upper levels of memory and dir to contain the searched-for data. Access penalties are considered
- * \param level in which level the data was found
+ * \param level in which level the valid data was found
  * \param cpu which cpu core is looking for the data
  * \param chip which chip is requesting data from memory
  * \param addr which data is being looked for
@@ -242,10 +242,12 @@ void mmu_read (int level, int cpu, int chip, int addr) {
         
         if (chip == 0) {
 			data_l2 = get_at(L2a, addr4);
-			data_l2->status = Shared;
+			data_l2->status = Valid;
+			data_l2->shared = Shared;
         } else {
             data_l2 = get_at(L2b, addr4);
-			data_l2->status = Shared;
+			data_l2->status = Valid;
+			data_l2->shared = Shared;
         }
 
 		usleep(l1_penalty);
@@ -277,7 +279,8 @@ void mmu_read (int level, int cpu, int chip, int addr) {
         memory_t *data_mem;
         data_mem = (memory_t*) malloc(sizeof(memory_t));
 	    data_mem = get_at(MEM, addr);
-		data_mem->status = Shared;
+		data_mem->status = Valid;
+		data_mem->shared = Shared;
 
 		usleep(l2_penalty);
 		usleep(dir_penalty);
@@ -326,10 +329,10 @@ void mmu_read (int level, int cpu, int chip, int addr) {
 void mmu_write (int cpu, int chip, int addr, int data){
 	memory_t * new_data;
 	new_data = (memory_t *) malloc(sizeof(memory_t));
-	new_data->block = 0;		// Confirm
-	new_data->status = Modified;
+	new_data->block = chip;		// Confirm
+	new_data->status = Valid;
 	new_data->core = cpu;
-	new_data->shared = 0;		// Update
+	new_data->shared = Modified;
 	new_data->dir_data = addr;
 	new_data->data = data;
 
@@ -463,7 +466,7 @@ void* processor (void* params) {
 	int total_cycles = 10;
 	int cycles = total_cycles;
 	printf("+++ Starting core %d +++\n \n", n_core);
-	logg(3,"+++ Starting core", itoc(n_core)," +++");
+	logg(3,"+++ Starting core ", itoc(n_core)," +++");
 	while (cycles){
         // create instruction
         current->core = n_core;
@@ -473,28 +476,31 @@ void* processor (void* params) {
         current->data = (rand() % 1024);
 
         if (current->op == op_write) {     
+			char buffer[128];
             pthread_mutex_lock(&mem_lock);
-			printf("core %d, cycle %d: writting %d to memory\n", current->core, total_cycles-cycles, current->data);
+			sprintf(buffer, "core %d, cycle %d: writting %d to memory", current->core, total_cycles-cycles, current->data);
+			printf("%s\n", buffer); logg(1, buffer);
 			printf(" └─> data written to 0x%d\n", current->dir);
-			logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": writting ", itoc(current->data), " to memory");
-			logg(2, " └─> data written to 0x", itoc(current->dir));
+			logg(2," └─> data written to 0x", itoc(current->dir));
 			mmu_write(current->core, current->chip, current->dir, current->data);
             print_all();
             pthread_mutex_unlock(&mem_lock);
         }
         else if (current->op == op_read) {
             int location = check_mem(0, current->core, current->chip, current->dir);
+			char buffer[128];
             pthread_mutex_lock(&mem_lock);
-            printf("core %d, cycle %d: reading 0x%d from memory\n", current->core, total_cycles-cycles, current->dir);
+	        sprintf(buffer, "core %d, cycle %d: reading 0x%d from memory", current->core, total_cycles-cycles, current->dir);
+			printf("%s\n", buffer); logg(1, buffer);
             printf(" └─> data found on level %d\n", location);
-			logg(7, "core ", itoc(current->core), ", cycle ", itoc(total_cycles-cycles), ": reading 0x", itoc(current->dir), " from memory");
-			logg(2, " └─> data found on level ", itoc(location));
+			logg(2," └─> data found on level ", itoc(location));
             mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
             print_all();
             pthread_mutex_unlock(&mem_lock);
         } else { //(current->op == op_process)
-            printf( "core %d, cycle %d: processing\n", current->core, total_cycles-cycles);
-			logg(5, "core ", itoc(current->core), " cycle ", itoc(total_cycles-cycles), ": processing");
+		char buffer[128];
+            sprintf(buffer, "core %d, cycle %d: processing", current->core, total_cycles-cycles);
+			printf("%s\n", buffer); logg(1, buffer);
             usleep (proc_time);
         }
         cycles--;
@@ -513,7 +519,7 @@ int main () {
         memblock->block = 0;
         memblock->status = Valid;
         memblock->core = 0;
-        memblock->shared = 0;
+        memblock->shared = Modified;
         memblock->dir_data = i;
         memblock->data = rand()%256;
         
@@ -527,7 +533,7 @@ int main () {
         memblock->block = 0;
         memblock->status = Invalid;
         memblock->core = 0;
-        memblock->shared = 0;
+        memblock->shared = Modified;
         memblock->dir_data = -1;
         memblock->data = -1;
         
@@ -541,7 +547,7 @@ int main () {
         l2block->block = 0;
         l2block->status = Invalid;
         l2block->core = 0;
-        l2block->shared = 0;
+        l2block->shared = Modified;
         l2block->dir_data = -1;
         l2block->data = 0;
         
@@ -553,7 +559,7 @@ int main () {
         l2block->block = 0;
         l2block->status = Invalid;
         l2block->core = 0;
-        l2block->shared = 0;
+        l2block->shared = Modified;
         l2block->dir_data = -1;
         l2block->data = 0;
         
@@ -567,6 +573,7 @@ int main () {
         l1block->block = 0;
         l1block->status = Invalid;
         l1block->core = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -575,10 +582,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 1;
+        l1block->block = 0;
         l1block->status = Invalid;
         l1block->core = 1;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -587,10 +594,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 2;
+        l1block->block = 1;
         l1block->status = Invalid;
         l1block->core = 2;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
@@ -599,10 +606,10 @@ int main () {
     for (int i = 0; i < 2; i++) {
         memory_t *l1block;
         l1block = malloc(sizeof(memory_t));
-        l1block->block = 3;
+        l1block->block = 1;
         l1block->status = Invalid;
         l1block->core = 3;
-        l1block->shared = 0;
+        l1block->shared = Modified;
         l1block->dir_data = -1;
         l1block->data = 0;
         
