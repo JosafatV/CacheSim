@@ -1,0 +1,91 @@
+Logg started: Wed May 27 17:35:30 2020
+ =============== Starting simulation =============== 
++++ Starting core1 +++
++++ Starting core2 +++
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x9
++++ Starting core3 +++
++++ Starting core0 +++
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x1
+core 3, cycle 3: reading 0x3 from memory
+ └─> data found on level 2
+core 0, cycle 0: reading 0x0 from memory
+ └─> data found on level 2
+core 1, cycle 1: reading 0x1 from memory
+ └─> data found on level 2
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x6
+core 3, cycle 3: reading 0x3 from memory
+ └─> data found on level 2
+core 0, cycle 0: reading 0x0 from memory
+ └─> data found on level 1
+core 2, cycle 2: reading 0x2 from memory
+core 0 cycle 0: processing
+ └─> data found on level 2
+core 2 cycle 2: processing
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x15
++++ UD updated status of 0x15 in l2b +++
++++ UD updated status of 0x15 in l1d +++
+core 1 cycle 1: processing
+core 3, cycle 3: reading 0x3 from memory
+ └─> data found on level 1
+core 0, cycle 0: reading 0x0 from memory
+ └─> data found on level 2
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x10
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x3
+core 3, cycle 3: reading 0x3 from memory
+ └─> data found on level 1
+core 0, cycle 0: reading 0x0 from memory
+ └─> data found on level 2
+core 2, cycle 2: reading 0x2 from memory
+ └─> data found on level 1
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x11
+core 3, cycle 3: reading 0x3 from memory
+ └─> data found on level 1
+core 3 cycle 3: processing
+core 0, cycle 0: writting 0 to memory
+ └─> data written to 0x1
++++ UD updated status of 0x1 in l2b +++
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x5
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x11
++++ UD updated status of 0x11 in l1d +++
+core 3, cycle 3: writting 3 to memory
+ └─> data written to 0x0
+core 0, cycle 0: writting 0 to memory
+ └─> data written to 0x6
++++ UD updated status of 0x6 in l1b +++
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x2
+core 1, cycle 1: writting 1 to memory
+ └─> data written to 0x8
+core 3, cycle 3: writting 3 to memory
+ └─> data written to 0x5
++++ UD updated status of 0x5 in l2a +++
++++ UD updated status of 0x5 in l1b +++
+core 3, cycle 3: writting 3 to memory
+ └─> data written to 0x14
+core 3 cycle 3: processing
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x7
++++ UD updated status of 0x7 in l2a +++
+core 1, cycle 1: writting 1 to memory
+core 2 cycle 2: processing
+ └─> data written to 0x13
+core 0, cycle 0: writting 0 to memory
+ └─> data written to 0x5
++++ UD updated status of 0x5 in l2b +++
++++ UD updated status of 0x5 in l1d +++
+core 2, cycle 2: writting 2 to memory
+ └─> data written to 0x6
++++ UD updated status of 0x6 in l1a +++
+core 0, cycle 0: writting 0 to memory
+ └─> data written to 0x11
+core 0, cycle 0: writting 0 to memory
+ └─> data written to 0x4

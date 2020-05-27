@@ -385,6 +385,74 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	update_dir(cpu, chip, addr);   
 }
 
+/** Returns the probability of a instruction being a read instruction within a processing cycle.
+ * \param i the current position in the cycle
+ * \param n the total iterations of the program cycle
+ * \return the percentage probability
+ */
+int read_p (int i, int n){
+    int progress = ((100*i)/n);
+    
+    if (progress<20) {
+        return 80;
+    } else if (progress<40) {
+        return 60;
+    } else if (progress<60) {
+        return 33;
+    } else if (progress<80) {
+        return 20;
+    } else {
+        return 10;
+    }
+}
+
+/** Returns the probability of a instruction being a write instruction within a processing cycle.
+ * \param i the current position in the cycle
+ * \param n the total iterations of the program cycle
+ * \return the percentage probability
+ */
+int write_p (int i, int n){
+    int progress = ((100*i)/n);
+    
+    if (progress<20) {
+        return 10;
+    } else if (progress<40) {
+        return 20;
+    } else if (progress<60) {
+        return 33;
+    } else if (progress<80) {
+        return 60;
+    } else {
+        return 80;
+    }
+}
+
+/** Select an instruction by a based on 3 normal distributons. Reads are skewed left to represent
+ * the program loading memory and writes are skewed right to represent the program completing operations
+ * \param i the current position in the cycle
+ * \param n the total iterations of the program cycle
+ * \return the type of operation
+ */
+int select_instr (int i, int n) {
+    int roll100 = (rand() % 101);
+    int pread = read_p(i, n);    // probability it is a read_op
+    int pwrte = write_p(i, n);   // probability it is a write_op
+
+    //printf("p_read = %d, p_write = %d, p_proc = %d. Rolled = %d", pread, pwrte, (100-pread-pwrte), roll100);
+
+    if (roll100<pread){
+        //printf(" | chose read\n");
+        return op_read;
+    } else if (roll100<(pread+pwrte)) {
+        //printf(" | chose write\n");
+        return op_write;
+    } else {
+        //printf(" | chose proc\n");
+        return op_process;
+    }
+    
+}
+
 void* processor (void* params) {
 	processor_params *p = (processor_params*) params;
 	int n_core = p->id;
@@ -400,7 +468,7 @@ void* processor (void* params) {
         // create instruction
         current->core = n_core;
         current->chip = n_chip;
-        current->op = (rand() % 3);
+        current->op = select_instr(total_cycles-cycles, total_cycles);
         current->dir = (rand() % 16);
         current->data = (rand() % 1024);
 
