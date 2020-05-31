@@ -144,12 +144,44 @@ int check_mem(int level, int cpu, int chip, int addr) {
     }
 }
 
+/** With the write-back policy, when there is a miss Modified data must be written back to memory
+ * \param wb_data The outdated data that has to be written to memory
+ * \param addr the address that is being written
+ * \param chip the chip that is writting the data. Not used if level == 1
+ * \param level the level the data is at: 0==L1, 1==L2 & 2==MEM
+ */
+void write_back (memory_t* wb_data, int addr, int chip, int level) {
+	int addr4 = addr%4;
+	int l2a_addr = addr4;
+    int l2b_addr = 4+addr4;
+
+	// Data found in L1, write_back to L2
+	if (level == 0) {
+	usleep(l2_penalty);
+		if (chip == 0) {
+			set_at(L2a, addr4, wb_data);
+			set_at(DIR, l2a_addr, wb_data);
+		} else {
+			set_at(L2b, addr4, wb_data);
+			set_at(DIR, l2b_addr, wb_data);		
+		}
+		level++; // Data written back to L2. Proceed write_back to mem
+	}
+
+	// Data is in L2, write_back to memory
+	if (level==1){
+		usleep(mem_penalty);
+		set_at(MEM, addr, wb_data);
+	}
+}
+
 /** Checks the other chip to set the data in cache and update it. Monitoring algorithm with invalidation
  * \param cpu the cpu that is writting the data
  * \param chip the chip that is writting the data
  * \param addr the address that is being written
  */
 void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
+	int level = 0;
 	int addr2 = addr%2;
 	// Access penalty
 	usleep(l1_penalty);
@@ -159,7 +191,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		if (get_at(L1c, addr2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1c, addr2);
-			new_data->status = Invalid;
+			if (new_data->status == Modified) {
+				new_data->status = Invalid;
+				write_back(new_data, addr, 1, level);
+			} else {
+				new_data->status = Invalid;			
+			}
 			set_at(L1c, addr2, new_data);
 			printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1c +++");
@@ -168,7 +205,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		if (get_at(L1d, addr2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1d, addr2);
-			new_data->status = Invalid;
+			if (new_data->status == Modified) {
+				new_data->status = Invalid;
+				write_back(new_data, addr, 1, level);
+			} else {
+				new_data->status = Invalid;			
+			}
 			set_at(L1d, addr2, new_data);
 			printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1d +++");
@@ -179,7 +221,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1a, addr%2)->dir_data == addr) {
 				usleep(l1_penalty);
 				memory_t* new_data = get_at(L1a, addr2);
-				new_data->status = Invalid;
+				if (new_data->status == Modified) {
+					new_data->status = Invalid;
+					write_back(new_data, addr, 0, level);
+				} else {
+					new_data->status = Invalid;			
+				}
 				set_at(L1a, addr2, new_data);
 				printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
 				logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1a +++");
@@ -189,7 +236,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1b, addr%2)->dir_data == addr) {
 				usleep(l1_penalty);
 				memory_t* new_data = get_at(L1b, addr2);
-				new_data->status = Invalid;
+				if (new_data->status == Modified) {
+					new_data->status = Invalid;
+					write_back(new_data, addr, 0, level);
+				} else {
+					new_data->status = Invalid;			
+				}
 				set_at(L1b, addr2, new_data);
 				printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
 				logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1b +++");
@@ -200,7 +252,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		if (get_at(L1a, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1a, addr2);
-			new_data->status = Invalid;
+			if (new_data->status == Modified) {
+				new_data->status = Invalid;
+				write_back(new_data, addr, 0, level);
+			} else {
+				new_data->status = Invalid;			
+			}
 			set_at(L1a, addr2, new_data);
 			printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1a +++");
@@ -208,7 +265,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		if (get_at(L1b, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1b, addr2);
-			new_data->status = Invalid;
+			if (new_data->status == Modified) {
+				new_data->status = Invalid;
+				write_back(new_data, addr, 0, level);
+			} else {
+				new_data->status = Invalid;			
+			}
 			set_at(L1b, addr2, new_data);
 			printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1b +++");
@@ -218,7 +280,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1d, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 				memory_t* new_data = get_at(L1d, addr%2);
-				new_data->status = Invalid;
+				if (new_data->status == Modified) {
+					new_data->status = Invalid;
+					write_back(new_data, addr, 1, level);
+				} else {
+					new_data->status = Invalid;			
+				}
 				set_at(L1d, addr2, new_data);
 				printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
 				logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1d +++");
@@ -227,7 +294,12 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1c, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1c, addr2);
-			new_data->status = Invalid;
+			if (new_data->status == Modified) {
+				new_data->status = Invalid;
+				write_back(new_data, addr, 1, level);
+			} else {
+				new_data->status = Invalid;			
+			}
 			set_at(L1c, addr2, new_data);
 			printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1c +++");
@@ -244,6 +316,7 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
  * \param addr the address that is being modified
 */
 int update_dir (int cpu, int chip, int addr) {
+	int level = 1;
     int addr4 = addr%4;
     int l2a_addr = addr4;
     int l2b_addr = 4+addr4;
@@ -253,14 +326,24 @@ int update_dir (int cpu, int chip, int addr) {
     // If L2b is updated (cpu_0 or cpu_1 write) and the data is in L2b, update status of L2b in Dir
    if (chip==1 && get_at(DIR, l2a_addr)->dir_data == addr) {
         memory_t *new_l2 = get_at(DIR, l2a_addr);
-        new_l2->status = Invalid;
+		if (new_l2->status == Modified) {
+			new_l2->status = Invalid;
+			write_back(new_l2, addr, chip, level);
+		} else {
+			new_l2->status = Invalid;			
+		}
         set_at(DIR, l2a_addr, new_l2);
 		printf("+++ UD updated status of %d in l2a +++\n", addr);
 		logg(3,"+++ UD updated status of 0x", itoc(addr), " in l2a +++");
 		usleep(l2_penalty);
     } else if (chip==0 && get_at(DIR, l2b_addr)->dir_data == addr) {
         memory_t *new_l2 = get_at(DIR, l2b_addr);
-        new_l2->status = Invalid;
+		if (new_l2->status == Modified) {
+			new_l2->status = Invalid;
+			write_back(new_l2, addr, chip, level);
+		} else {
+			new_l2->status = Invalid;			
+		}
         set_at(DIR, l2b_addr, new_l2);
 		printf("+++ UD updated status of %d in l2b +++\n", addr);
 		logg(3,"+++ UD updated status of 0x", itoc(addr), " in l2b +++");
@@ -377,7 +460,6 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	new_data->dir_data = addr;
 	new_data->data = data;
 
-	usleep(dir_penalty);
 	int addr2 = addr%2;
 	int addr4 = addr%4;
 	int l2a_addr = addr4;
@@ -404,27 +486,11 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	}
 
 	//pthread_mutex_lock(&mem_lock);
-
-	// Monitor BUS for the write
+	// Monitor BUS for the write | Call for Writebacks
 	invalidation_monitor(cpu, chip, addr, new_data);
 
-	// Send to BUS (Write-through L2)
-	usleep(l2_penalty);
-	if (chip == 0) {
-		set_at(L2a, addr4, new_data);
-		set_at(DIR, l2a_addr, new_data);
-	} else {
-		set_at(L2b, addr4, new_data);
-		set_at(DIR, l2b_addr, new_data);		
-	}
-
-	// Update status of other memory in directory
+	// Monitor BUS for the write | Call for Writebacks
 	update_dir(cpu, chip, addr);
-
-	// Send to BUS (Write-through MEM)
-	usleep(mem_penalty);
-	set_at(MEM, addr, new_data);
-
 	//pthread_mutex_unlock(&mem_lock);
 }
 
