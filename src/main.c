@@ -283,6 +283,7 @@ void mmu_read (int level, int cpu, int chip, int addr) {
 	
     if (level == 1) {
         // Data is in L2. Read and elevate to L1
+		//pthread_mutex_lock(&mem_lock);
         usleep(l2_penalty);
         memory_t *data_l2;
         data_l2 = (memory_t*) malloc(sizeof(memory_t));
@@ -315,8 +316,10 @@ void mmu_read (int level, int cpu, int chip, int addr) {
             default:
                 break;
         }
+		//pthread_mutex_unlock(&mem_lock);
     } else if (level == 2) {
         // Data is in MEM. Read and elevate to L2 and L1. Update DIR to match L2
+		//pthread_mutex_lock(&mem_lock);
         usleep(mem_penalty);
         memory_t *data_mem;
         data_mem = (memory_t*) malloc(sizeof(memory_t));
@@ -351,6 +354,7 @@ void mmu_read (int level, int cpu, int chip, int addr) {
             default:
                 break;
         }
+		//pthread_mutex_unlock(&mem_lock);
 	} else {
         // if (level == 0) Data is in L1 (Read-hit). No action needed
         usleep(l1_penalty);
@@ -399,6 +403,8 @@ void mmu_write (int cpu, int chip, int addr, int data){
 		break;
 	}
 
+	//pthread_mutex_lock(&mem_lock);
+
 	// Monitor BUS for the write
 	invalidation_monitor(cpu, chip, addr, new_data);
 
@@ -418,6 +424,8 @@ void mmu_write (int cpu, int chip, int addr, int data){
 	// Send to BUS (Write-through MEM)
 	usleep(mem_penalty);
 	set_at(MEM, addr, new_data);
+
+	//pthread_mutex_unlock(&mem_lock);
 }
 
 /** Returns the probability of a instruction being a read instruction within a processing cycle.
@@ -525,7 +533,7 @@ void* processor (void* params) {
         else if (current->op == op_read) {
             int location = check_mem(0, current->core, current->chip, current->dir);
 			char buffer[128];
-            pthread_mutex_lock(&mem_lock);
+        	pthread_mutex_lock(&mem_lock);
 	        sprintf(buffer, "core %d, cycle %d: reading 0x%d from memory", current->core, total_cycles-cycles, current->dir);
 			printf("%s\n", buffer); logg(1, buffer);
             printf(" └─> data found on level %d\n", location);
