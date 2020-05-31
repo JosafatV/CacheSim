@@ -37,7 +37,7 @@ void print_list(Node_t *head, int property) {
 
 /** Prints the memory block of the according level
  * \param head the linked_list to print
- * \param level the memory level to print. Use 1 for all attributes
+ * \param level the memory level to print. Use 0 for L1 cache, 1 for L2 (all attributes), 2 for MEM and 3 for DIR
  */
 void print_mem(Node_t *head, int level) {
 	memory_t* current;
@@ -54,7 +54,21 @@ void print_mem(Node_t *head, int level) {
 			printf(" %d ]\n", current->data);
 		}
 	} else if (level == 2) { 
-		// Print MEM chace attributes
+		// Print MEM attributes
+		for (int i = 0; i<len; i++){
+			current = get_at(head, i);
+			if (i<10) {
+				printf("0x0%d [", i);
+			} else {
+				printf("0x%d [", i);
+			}
+      		//print_status(current->status, current->shared);
+			printf(" %d |", current->core);
+			//printf(" 0x%d |", current->dir_data);
+			printf(" %d ]\n", current->data);
+		}
+	} else if (level == 3) { 
+		// Print DIR attributes
 		for (int i = 0; i<len; i++){
 			current = get_at(head, i);
 			if (i<10) {
@@ -64,8 +78,7 @@ void print_mem(Node_t *head, int level) {
 			}
       		print_status(current->status, current->shared);
 			printf(" %d |", current->core);
-			//printf(" 0x%d |", current->dir_data);
-			printf(" %d ]\n", current->data);
+			printf(" 0x%d ]\n", current->dir_data);
 		}
 	} else {
 		// Print L2 cache attributes (all)

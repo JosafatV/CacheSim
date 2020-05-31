@@ -4,7 +4,7 @@
 #include <time.h>
 
 //const char* read_path = "/home/josav09/Documents/C tests/fileReader/readme.txt";
-const char* write_path = "./logs/monitoring.log";
+const char* write_path = "./logs/write-through.log";
 
 /** converts an integer to a char * that can be printed
  * \param num the number to convert
