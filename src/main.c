@@ -68,8 +68,8 @@ void print_all(){
     printf("\n");
 }
 
-/**  finds a data object in memory, memory access penalty changes to directory access mem
- * \param level the level of memory is being accessed: 0==L1, 1==L2 & 2==MEM
+/**  finds a data object in memory, memory access penalty changes to directory access mem. Searching level 0 will only check L1
+ * \param level the level of memory is being accessed: 0==L1 or 1==L2 & 2==MEM. 
  * \param cpu which processor is doing the search (especifies which L1 cache to search)
  * \param chip which processor is doing the search (especifies which L2 cache to search)
  * \param addr which memory we are looking for
@@ -87,7 +87,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
         case 0:
             searched_data = get_at(L1a, addr2);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
+                return 1;
             } else {
                 return level; // data found
             } 
@@ -95,7 +95,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
         case 1:
             searched_data = get_at(L1b, addr2);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
+                return 1;
             } else {
                 return level; // data found
             } 
@@ -103,7 +103,7 @@ int check_mem(int level, int cpu, int chip, int addr) {
         case 2:
             searched_data = get_at(L1c, addr2);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
+                return 1;
             } else {
                 return level; // data found
             } 
@@ -111,13 +111,13 @@ int check_mem(int level, int cpu, int chip, int addr) {
         case 3:
             searched_data = get_at(L1d, addr2);
             if (searched_data->status == Invalid || searched_data->dir_data != addr) {
-                return check_mem(level+1, cpu, chip, addr);
+                return 1;
             } else {
                 return level; // data found
             } 
             break;
         default:
-            return check_mem(level+1, cpu, chip, addr);
+            return 1;
             break;
         }
     } else if (level == 1) { // check DIR instead of L2
@@ -157,11 +157,13 @@ void write_back (memory_t* wb_data, int addr, int chip, int level) {
 
 	// Data found in L1, write_back to L2
 	if (level == 0) {
-	usleep(l2_penalty);
+		usleep(l2_penalty);
 		if (chip == 0) {
+			printf("+++ Writting back to L2a +++\n");
 			set_at(L2a, addr4, wb_data);
 			set_at(DIR, l2a_addr, wb_data);
 		} else {
+			printf("+++ Writting back to L2b +++\n");
 			set_at(L2b, addr4, wb_data);
 			set_at(DIR, l2b_addr, wb_data);		
 		}
@@ -171,6 +173,7 @@ void write_back (memory_t* wb_data, int addr, int chip, int level) {
 	// Data is in L2, write_back to memory
 	if (level==1){
 		usleep(mem_penalty);
+		printf("+++ Writting back to MEM +++\n");
 		set_at(MEM, addr, wb_data);
 	}
 }
@@ -190,28 +193,28 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 	if (!chip) {
 		if (get_at(L1c, addr2)->dir_data == addr) {
 			usleep(l1_penalty);
-			memory_t* new_data = get_at(L1c, addr2);
-			if (new_data->status == Modified) {
-				new_data->status = Invalid;
-				write_back(new_data, addr, 1, level);
+			memory_t* inv_data = get_at(L1c, addr2);
+			if (inv_data->shared == Modified && new_data->status == Valid) {
+				inv_data->status = Invalid;
+				write_back(inv_data, addr, 1, level);
 			} else {
-				new_data->status = Invalid;			
+				inv_data->status = Invalid;			
 			}
-			set_at(L1c, addr2, new_data);
+			set_at(L1c, addr2, inv_data);
 			printf("+++ IM updated status of 0x%d in L1c +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1c +++");
 			//set_at(L1c, addr%2, new_data);
 		}
 		if (get_at(L1d, addr2)->dir_data == addr) {
 			usleep(l1_penalty);
-			memory_t* new_data = get_at(L1d, addr2);
-			if (new_data->status == Modified) {
-				new_data->status = Invalid;
-				write_back(new_data, addr, 1, level);
+			memory_t* inv_data = get_at(L1d, addr2);
+			if (inv_data->shared == Modified && new_data->status == Valid) {
+				inv_data->status = Invalid;
+				write_back(inv_data, addr, 1, level);
 			} else {
-				new_data->status = Invalid;			
+				inv_data->status = Invalid;			
 			}
-			set_at(L1d, addr2, new_data);
+			set_at(L1d, addr2, inv_data);
 			printf("+++ IM updated status of 0x%d in L1d +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1d +++");
 			//set_at(L1d, addr%2, new_data);
@@ -220,14 +223,14 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		if (cpu) { 
 			if (get_at(L1a, addr%2)->dir_data == addr) {
 				usleep(l1_penalty);
-				memory_t* new_data = get_at(L1a, addr2);
-				if (new_data->status == Modified) {
-					new_data->status = Invalid;
-					write_back(new_data, addr, 0, level);
+				memory_t* inv_data = get_at(L1a, addr2);
+				if (inv_data->shared == Modified && new_data->status == Valid) {
+					inv_data->status = Invalid;
+					write_back(inv_data, addr, 0, level);
 				} else {
-					new_data->status = Invalid;			
+					inv_data->status = Invalid;			
 				}
-				set_at(L1a, addr2, new_data);
+				set_at(L1a, addr2, inv_data);
 				printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
 				logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1a +++");
 				//set_at(L1a, addr%2, new_data);
@@ -235,14 +238,14 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 		} else {
 			if (get_at(L1b, addr%2)->dir_data == addr) {
 				usleep(l1_penalty);
-				memory_t* new_data = get_at(L1b, addr2);
-				if (new_data->status == Modified) {
-					new_data->status = Invalid;
-					write_back(new_data, addr, 0, level);
+				memory_t* inv_data = get_at(L1b, addr2);
+				if (inv_data->shared == Modified && new_data->status == Valid) {
+					inv_data->status = Invalid;
+					write_back(inv_data, addr, 0, level);
 				} else {
-					new_data->status = Invalid;			
+					inv_data->status = Invalid;			
 				}
-				set_at(L1b, addr2, new_data);
+				set_at(L1b, addr2, inv_data);
 				printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
 				logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1b +++");
 				//set_at(L1b, addr%2, new_data);
@@ -251,27 +254,27 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 	} else {
 		if (get_at(L1a, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
-			memory_t* new_data = get_at(L1a, addr2);
-			if (new_data->status == Modified) {
-				new_data->status = Invalid;
-				write_back(new_data, addr, 0, level);
+			memory_t* inv_data = get_at(L1a, addr2);
+			if (inv_data->shared == Modified && new_data->status == Valid) {
+				inv_data->status = Invalid;
+				write_back(inv_data, addr, 0, level);
 			} else {
-				new_data->status = Invalid;			
+				inv_data->status = Invalid;			
 			}
-			set_at(L1a, addr2, new_data);
+			set_at(L1a, addr2, inv_data);
 			printf("+++ IM updated status of 0x%d in L1a +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1a +++");
 		}   
 		if (get_at(L1b, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
-			memory_t* new_data = get_at(L1b, addr2);
-			if (new_data->status == Modified) {
-				new_data->status = Invalid;
-				write_back(new_data, addr, 0, level);
+			memory_t* inv_data = get_at(L1b, addr2);
+			if (inv_data->shared == Modified && new_data->status == Valid) {
+				inv_data->status = Invalid;
+				write_back(inv_data, addr, 0, level);
 			} else {
-				new_data->status = Invalid;			
+				inv_data->status = Invalid;			
 			}
-			set_at(L1b, addr2, new_data);
+			set_at(L1b, addr2, inv_data);
 			printf("+++ IM updated status of 0x%d in L1b +++\n", addr);
 			logg(3,"+++ IM updated status of 0x", itoc(addr)," in L1b +++");
 		}
@@ -280,7 +283,7 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1d, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 				memory_t* new_data = get_at(L1d, addr%2);
-				if (new_data->status == Modified) {
+				if (new_data->shared == Modified && new_data->status == Valid) {
 					new_data->status = Invalid;
 					write_back(new_data, addr, 1, level);
 				} else {
@@ -294,7 +297,7 @@ void invalidation_monitor(int cpu, int chip, int addr, memory_t* new_data) {
 			if (get_at(L1c, addr%2)->dir_data == addr) {
 			usleep(l1_penalty);
 			memory_t* new_data = get_at(L1c, addr2);
-			if (new_data->status == Modified) {
+			if (new_data->shared == Modified && new_data->status == Valid) {
 				new_data->status = Invalid;
 				write_back(new_data, addr, 1, level);
 			} else {
@@ -326,23 +329,23 @@ int update_dir (int cpu, int chip, int addr) {
     // If L2b is updated (cpu_0 or cpu_1 write) and the data is in L2b, update status of L2b in Dir
    if (chip==1 && get_at(DIR, l2a_addr)->dir_data == addr) {
         memory_t *new_l2 = get_at(DIR, l2a_addr);
-		if (new_l2->status == Modified) {
+		if (new_l2->shared == Modified && new_l2->status == Valid) {
 			new_l2->status = Invalid;
 			write_back(new_l2, addr, chip, level);
 		} else {
 			new_l2->status = Invalid;			
 		}
         set_at(DIR, l2a_addr, new_l2);
-		printf("+++ UD updated status of %d in l2a +++\n", addr);
+		printf("+++ UD updated status of 0x%d in l2a +++\n", addr);
 		logg(3,"+++ UD updated status of 0x", itoc(addr), " in l2a +++");
 		usleep(l2_penalty);
     } else if (chip==0 && get_at(DIR, l2b_addr)->dir_data == addr) {
         memory_t *new_l2 = get_at(DIR, l2b_addr);
-		if (new_l2->status == Modified) {
+		if (new_l2->shared == Modified && new_l2->status == Valid) {
 			new_l2->status = Invalid;
 			write_back(new_l2, addr, chip, level);
 		} else {
-			new_l2->status = Invalid;			
+			new_l2->status = Invalid;	
 		}
         set_at(DIR, l2b_addr, new_l2);
 		printf("+++ UD updated status of %d in l2b +++\n", addr);
@@ -350,6 +353,73 @@ int update_dir (int cpu, int chip, int addr) {
 		usleep(l2_penalty);
     }
         
+}
+
+/** If a read_miss happens, search the memory for Modified replicas and write it back
+ * \param core the cpu that is looking for the data
+ * \param chip the chip that is looking for the data
+ * \param addr the address we are looking for
+ */
+void read_miss_monitor (int core, int chip, int addr) {
+	int addr2 = addr%2;
+	int addr4 = addr%4;
+	int level = 0;
+	// Check if data is in a different L1 from the one reading
+	if (core!=0 && level == 0) {
+		memory_t* l1 = get_at(L1a, addr2);
+		if (l1->dir_data == addr && l1->shared == Modified && l1->status == Valid){
+			write_back(l1, addr, 0, level);
+			printf("+++ RM forced write-back of %d in l1a +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l1a +++");
+			level++; // data sent to lower level
+		}
+	}
+	if (core!=1 && level == 0) {
+		memory_t* l1 = get_at(L1b, addr2);
+		if (l1->dir_data == addr && l1->shared == Modified && l1->status == Valid){
+			write_back(l1, addr, 0, level);
+			printf("+++ RM forced write-back of %d in l1b +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l1b +++");
+			level++; // data sent to lower level
+		}
+	}
+	if (core!=2 && level == 0) {
+		memory_t* l1 = get_at(L1c, addr2);
+		if (l1->dir_data == addr && l1->shared == Modified && l1->status == Valid){
+			write_back(l1, addr, 1, level);
+			printf("+++ RM forced write-back of %d in l1c +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l1c +++");
+			level++; // data sent to lower level
+		}
+	}
+	if (core!=3 && level == 0) {
+		memory_t* l1 = get_at(L1d, addr2);
+		if (l1->dir_data == addr && l1->shared == Modified && l1->status == Valid){
+			write_back(l1, addr, 1, level);
+			printf("+++ RM forced write-back of %d in l1d +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l1d +++");
+			level++; // data sent to lower level
+		}
+	}
+	// In case the data exists Modified in L2 but not in L1
+	if (chip == 0 && level == 0) {
+		memory_t* l2 = get_at(L2a, addr4);
+		if (l2->dir_data == addr && l2->shared == Modified && l2->status == Valid){
+			write_back(l2, addr, 1, 1);
+			printf("+++ RM forced write-back of %d in l2a +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l2a +++");
+			level++; // data sent to lower level
+		}
+	}
+	if (chip == 1 && level == 0) {
+		memory_t* l2 = get_at(L2b, addr4);
+		if (l2->dir_data == addr && l2->shared == Modified && l2->status == Valid){
+			write_back(l2, addr, 1, 1);
+			printf("+++ RM forced write-back of %d in l2b +++\n", addr);
+			logg(3,"+++ RM forced write-back of ", itoc(addr), " in l2b +++");
+			level++; // data sent to lower level
+		}
+	}
 }
 
 /** After a MISS, updates the data on upper levels of memory and dir to contain the searched-for data. Access penalties are considered
@@ -597,15 +667,25 @@ void* processor (void* params) {
             pthread_mutex_unlock(&mem_lock);
         }
         else if (current->op == op_read) {
-            int location = check_mem(0, current->core, current->chip, current->dir);
+            int location = check_mem(0, current->core, current->chip, current->dir); // Check L1
 			char buffer[128];
         	pthread_mutex_lock(&mem_lock);
-	        sprintf(buffer, "core %d, cycle %d: reading 0x%d from memory", current->core, total_cycles-cycles, current->dir);
+			sprintf(buffer, "core %d, cycle %d: reading 0x%d from memory", current->core, total_cycles-cycles, current->dir);
 			printf("%s\n", buffer); logg(1, buffer);
-            printf(" └─> data found on level %d\n", location);
-			logg(2," └─> data found on level ", itoc(location));
-            mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
-            print_all();
+			if (location == 0) {
+				printf(" └─> data found on level %d\n", location);
+				logg(2," └─> data found on level ", itoc(location));
+				mmu_read(location, current->core, current->chip, current->dir); // take data form lower levels to higher levels (update cache)
+				print_all();
+			} else {
+				read_miss_monitor (current->core, current->chip, current->dir);
+				location = check_mem(1, current->core, current->chip, current->dir); // Check L2 and MEM
+				printf(" └─> data found on level %d\n", location);
+				logg(2," └─> data found on level ", itoc(location));
+				mmu_read(location, current->core, current->chip, current->dir); // can load from L2, even though WB is always all the way to mem
+				print_all();
+			}
+
             pthread_mutex_unlock(&mem_lock);
         } else { //(current->op == op_process)
 		char buffer[128];
