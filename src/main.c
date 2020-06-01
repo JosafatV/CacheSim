@@ -7,14 +7,16 @@
 #include "../include/linked_list.h"
 #include "../include/jvlogger.h"
 
+// Configuration
+#define proc_cycles 20
 #define op_process 0
 #define op_read 1
 #define op_write 2
-#define proc_time 10000
-#define dir_penalty 20000
-#define l1_penalty 20000
-#define l2_penalty 50000
-#define mem_penalty 100000
+#define proc_time 100
+#define dir_penalty 600
+#define l1_penalty 400
+#define l2_penalty 1200
+#define mem_penalty 15000
 
 volatile int bus_mem = 0;
 
@@ -507,7 +509,7 @@ void* processor (void* params) {
 
 	instr_t* current;
 	current = malloc(sizeof(instr_t));
-	int total_cycles = 10;
+	int total_cycles = proc_cycles;
 	int cycles = total_cycles;
 	printf("+++ Starting core %d +++\n \n", n_core);
 	logg(3,"+++ Starting core ", itoc(n_core)," +++");

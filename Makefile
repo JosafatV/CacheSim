@@ -7,6 +7,9 @@ all:
 run:
 		bin/main
 
+bm:
+		time bin/main
+
 reset:
 		rm -r bin
 		rm lib/*.o || :
